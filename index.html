@@ -1,0 +1,3300 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>مدیریت مالی آموزشگاه (HTML)</title>
+
+  <!-- فونت -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+  <!-- آیکون‌های Material (Flutter-like) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,600,1,0" />
+
+  <!-- ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      /* ===== Material-ish tokens ===== */
+      --font: "Vazirmatn", system-ui, -apple-system, Segoe UI, sans-serif;
+
+      --radius-xl: 26px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+
+      /* Elevation */
+      --e1: 0 1px 0 rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.35);
+      --e2: 0 1px 0 rgba(255,255,255,.06), 0 18px 55px rgba(0,0,0,.45);
+
+      /* Dark Blue (default) - Material 3 vibe */
+      --bg: #0B1020;
+      --surface: rgba(255,255,255,.06);
+      --surface2: rgba(255,255,255,.09);
+      --surface3: rgba(255,255,255,.12);
+      --border: rgba(255,255,255,.10);
+
+      --text: #F6F7FB;
+      --muted: rgba(246,247,251,.68);
+
+      --primary: #7BA6FF;
+      --primary2: rgba(123,166,255,.18);
+      --danger: #FF5A73;
+      --danger2: rgba(255,90,115,.16);
+      --warn: #FFC53D;
+      --good: #2ED39A;
+
+      --focus: rgba(123,166,255,.45);
+      --dangerRow: #4d1b1b;
+
+      color-scheme: dark;
+    }
+    [data-theme="dark_blue"]{ /* همون پیش‌فرض :root */ }
+
+    [data-theme="dark_green"]{
+      --bg: #061713;
+      --surface: rgba(255,255,255,.06);
+      --surface2: rgba(255,255,255,.09);
+      --surface3: rgba(255,255,255,.12);
+      --border: rgba(127,255,212,.14);
+
+      --text: #F6F7FB;
+      --muted: rgba(214,255,239,.66);
+
+      --primary: #2ED39A;
+      --primary2: rgba(46,211,154,.18);
+      --dangerRow:#302012;
+
+      --focus: rgba(46,211,154,.35);
+
+      color-scheme: dark;
+    }
+
+    [data-theme="light"]{
+      --bg:#F3F5FB;
+      --surface:#FFFFFF;
+      --surface2:#FFFFFF;
+      --surface3: rgba(0,0,0,.04);
+      --border: rgba(8,10,16,.10);
+
+      --text:#141824;
+      --muted: rgba(20,24,36,.62);
+
+      --primary:#3B82F6;
+      --primary2: rgba(59,130,246,.16);
+
+      --e1: 0 1px 0 rgba(0,0,0,.04), 0 16px 40px rgba(0,0,0,.10);
+      --e2: 0 1px 0 rgba(0,0,0,.06), 0 22px 60px rgba(0,0,0,.14);
+
+      --dangerRow:#ffe3e3;
+
+      --focus: rgba(59,130,246,.25);
+
+      color-scheme: light;
+    }
+
+    .material-symbols-rounded{
+      font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      font-size: 22px;
+    }
+
+    /* ===== Base ===== */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 700px at 70% 10%, rgba(123,166,255,.18), transparent 55%),
+        radial-gradient(900px 550px at 15% 90%, rgba(46,211,154,.12), transparent 60%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    a{color:inherit}
+    button,input,select{font-family:inherit}
+    button{appearance:none; -webkit-appearance:none}
+    :focus{outline:none}
+    :focus-visible{
+      box-shadow: 0 0 0 3px var(--focus);
+      border-radius: 14px;
+    }
+
+    /* Scrollbar */
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,.14);
+      border: 3px solid transparent;
+      background-clip: content-box;
+      border-radius: 999px;
+    }
+    [data-theme="light"] *::-webkit-scrollbar-thumb{
+      background: rgba(0,0,0,.18);
+      border:3px solid transparent;
+      background-clip:content-box
+    }
+
+    /* ===== Layout ===== */
+    .app{display:flex; height:100vh; overflow:hidden}
+
+    /* ===== Sidebar = NavigationRail-ish ===== */
+    .sidebar{
+      width:290px;
+      max-width:290px;
+      min-width:0;
+      padding:14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), transparent 42%),
+        rgba(0,0,0,.10);
+      border-left:1px solid var(--border);
+      backdrop-filter: blur(14px);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      transition: width .22s ease, max-width .22s ease;
+      position:relative;
+    }
+    .sidebar::before{
+      content:"";
+      position:absolute; inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(600px 260px at 30% 0%, rgba(123,166,255,.10), transparent 65%),
+        radial-gradient(520px 220px at 80% 35%, rgba(46,211,154,.08), transparent 70%);
+      opacity:.8;
+    }
+    .sidebar > *{position:relative; z-index:1}
+    .sidebar.collapsed{width:76px; max-width:76px}
+
+    .toggleSide{
+      position:absolute; left:12px; top:12px;
+      width:40px; height:40px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      display:grid; place-items:center;
+      cursor:pointer;
+      box-shadow: var(--e1);
+      transition: transform .12s ease, background .15s ease;
+    }
+    .toggleSide:hover{background: var(--surface2)}
+    .toggleSide:active{transform: scale(.98)}
+
+    .brand{
+      padding:12px 12px;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--e1);
+    }
+    .brand .t{font-weight:900; font-size:18px; letter-spacing:-.2px}
+    .brand .s{font-size:12px; color:var(--muted); margin-top:4px}
+    .sidebar.collapsed .brand .t,
+    .sidebar.collapsed .brand .s{display:none}
+
+    .nav{display:flex; flex-direction:column; gap:10px; margin-top:6px}
+    .navbtn{
+      width:100%;
+      border:1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      padding:12px 12px;
+      border-radius: 18px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      transition: transform .10s ease, background .18s ease, border-color .18s ease;
+    }
+    .navbtn:hover{background: var(--surface)}
+    .navbtn:active{transform: scale(.99)}
+    .navbtn.active{
+      background: linear-gradient(180deg, var(--primary2), rgba(255,255,255,.06));
+      border-color: rgba(123,166,255,.38);
+    }
+    [data-theme="dark_green"] .navbtn.active{border-color: rgba(46,211,154,.38)}
+
+    .navbtn .label{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight:800;
+    }
+    .navbtn .ico{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:38px; height:38px;
+      border-radius: 14px;
+      background: var(--surface);
+      border:1px solid var(--border);
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      opacity: .95;
+    }
+    .sidebar.collapsed .navbtn .label{display:none}
+    .sidebar.collapsed .navbtn{justify-content:center}
+    .sidebar.collapsed .navbtn .ico{width:44px;height:44px}
+
+    /* ===== Buttons ===== */
+    .side-actions{margin-top:6px; display:flex; flex-direction:column; gap:10px}
+
+    .btn{
+      border:1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding:11px 12px;
+      border-radius: 16px;
+      cursor:pointer;
+      transition: transform .10s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .btn:hover{background: var(--surface2); box-shadow: var(--e1)}
+    .btn:active{transform: scale(.99)}
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(123,166,255,.26), rgba(255,255,255,.06));
+      border-color: rgba(123,166,255,.50);
+    }
+    [data-theme="dark_green"] .btn.primary{
+      background: linear-gradient(180deg, rgba(46,211,154,.24), rgba(255,255,255,.06));
+      border-color: rgba(46,211,154,.45);
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,90,115,.22), rgba(255,255,255,.06));
+      border-color: rgba(255,90,115,.52);
+    }
+    .btn.ghost{
+      background: transparent;
+      border-color: transparent;
+      box-shadow:none;
+    }
+    .btn.ghost:hover{background: var(--surface)}
+
+    /* ===== Footer ===== */
+    .footer{
+      margin-top:auto;
+      padding:10px 12px;
+      color:var(--muted);
+      font-size:12px;
+      border-top:1px dashed var(--border);
+    }
+    .sidebar.collapsed .footer{display:none}
+
+    /* ===== Main ===== */
+    .main{flex:1; min-width:0; display:flex; flex-direction:column; height:100%}
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
+      backdrop-filter: blur(14px);
+    }
+    .topbar .title{
+      font-weight:900;
+      font-size:16px;
+      white-space:nowrap;
+    }
+    .chip{
+      padding:7px 10px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .spacer{flex:1}
+    .topbar .mini{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+
+    .content{padding:16px; overflow:auto}
+    .page{display:none}
+    .page.active{display:block}
+
+    /* ===== Cards ===== */
+    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:12px}
+    .card{
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--surface3) 65%, transparent), color-mix(in srgb, var(--surface) 85%, transparent));
+      border:1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--e1);
+      padding:14px;
+      min-width:0;
+    }
+    .card h3{
+      margin:0 0 8px 0;
+      font-size:12.5px;
+      color: var(--muted);
+      font-weight:900;
+      letter-spacing: .2px;
+    }
+    .metric{
+      font-size:24px;
+      font-weight:950;
+      letter-spacing:-.6px;
+    }
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .row > *{min-width:0}
+
+    .hint{color:var(--muted); font-size:12px; line-height:1.8}
+    .sep{height:1px; background: var(--border); margin:12px 0}
+
+    /* ===== Inputs ===== */
+    .field{display:flex; flex-direction:column; gap:6px; min-width:180px}
+    .field label{font-size:12px; color:var(--muted); font-weight:800}
+
+    select,input{
+      background: color-mix(in srgb, var(--surface2) 80%, transparent);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:11px 12px;
+      border-radius: 16px;
+      outline:none;
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+    [data-theme="light"] select,
+    [data-theme="light"] input{background:#fff}
+
+    select:focus, input:focus{
+      border-color: rgba(123,166,255,.55);
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+    [data-theme="dark_green"] select:focus,
+    [data-theme="dark_green"] input:focus{
+      border-color: rgba(46,211,154,.55);
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+
+    input::placeholder{color: color-mix(in srgb, var(--muted) 80%, transparent)}
+
+    /* ===== Tables ===== */
+    .tableWrap{
+      overflow:auto;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
+    }
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    thead th{
+      position:sticky; top:0; z-index:1;
+      background: color-mix(in srgb, var(--surface3) 85%, transparent);
+      backdrop-filter: blur(12px);
+      color: var(--text);
+      padding:11px 10px;
+      font-size:12px;
+      border-bottom:1px solid var(--border);
+      text-align:center;
+      white-space:nowrap;
+    }
+    tbody td{
+      padding:10px 8px;
+      border-bottom:1px solid color-mix(in srgb, var(--border) 55%, transparent);
+      text-align:center;
+      white-space:nowrap;
+    }
+    tbody tr:nth-child(2n){
+      background: color-mix(in srgb, var(--surface) 35%, transparent);
+    }
+    tbody tr:hover{
+      background: color-mix(in srgb, var(--surface2) 55%, transparent);
+    }
+
+    .tdR{text-align:right}
+    .tdC{text-align:center}
+    .tdL{text-align:left}
+
+    .inpCell{
+      width:120px;
+      padding:10px 10px;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: color-mix(in srgb, var(--surface2) 70%, transparent);
+      color: var(--text);
+      outline:none;
+      text-align:center;
+    }
+    [data-theme="light"] .inpCell{background:#fff; color:#141824}
+
+    .inpCell.wide{width:240px; text-align:right}
+    .inpCell.mid{width:170px; text-align:right}
+
+    .computed{opacity:.96; font-weight:950}
+    .dangerRow{
+      background: color-mix(in srgb, var(--dangerRow) 75%, transparent) !important;
+    }
+
+    /* ===== Charts ===== */
+    .chart{
+      width:100%;
+      height:290px;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
+    }
+    .chart.tall{height:350px}
+    .chart.short{height:230px}
+
+    /* ===== Modals ===== */
+    .modalBack{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      padding:18px;
+      z-index:9999;
+    }
+    .modalBack.show{display:flex}
+    .modal{
+      width:min(820px, 100%);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--surface3) 65%, transparent), color-mix(in srgb, var(--surface) 85%, transparent));
+      border:1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--e2);
+      padding:16px;
+      transform: translateY(6px) scale(.985);
+      opacity:.0;
+      animation: pop .18s ease forwards;
+    }
+    @keyframes pop{to{transform: translateY(0) scale(1); opacity:1}}
+    .modal h2{margin:6px 0 12px 0; font-size:16px; font-weight:950}
+    .modal .actions{display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap}
+
+    /* ===== Responsive ===== */
+    @media (max-width: 980px){
+      .grid{grid-template-columns: repeat(6, 1fr)}
+      .sidebar{position:fixed; right:0; top:0; bottom:0; z-index:50}
+      .main{margin-right:290px}
+      .sidebar.collapsed + .main{margin-right:76px}
+    }
+    @media (max-width: 720px){
+      .grid{grid-template-columns: repeat(2, 1fr)}
+      .main{margin-right:76px}
+      .sidebar{width:76px; max-width:76px}
+      .sidebar .brand .t,.sidebar .brand .s,.sidebar .footer,.sidebar .navbtn .label{display:none}
+      .sidebar .navbtn{justify-content:center}
+      .chart{height:250px}
+      .chart.tall{height:310px}
+      .field{min-width: 100%}
+      .topbar{flex-wrap:wrap}
+    }
+  </style>
+</head>
+
+<body data-theme="dark_blue">
+  <div class="app">
+    <aside id="sidebar" class="sidebar">
+      <button class="toggleSide" id="btnToggleSide" title="باز/بسته">⮜</button>
+
+      <div class="brand">
+        <div class="t">مدیریت آموزشگاه</div>
+        <div class="s">نسخه HTML + داشبورد پیشرفته</div>
+      </div>
+
+      <nav class="nav">
+        <button class="navbtn" data-page="dashboard">
+          <span class="label">داشبورد مالی</span>
+          <span class="ico material-symbols-rounded">dashboard</span>
+        </button>
+        <button class="navbtn" data-page="workdesk">
+          <span class="label">میز کار</span>
+          <span class="ico material-symbols-rounded">space_dashboard</span>
+        </button>
+        <button class="navbtn" data-page="classes">
+          <span class="label">کلاس‌ها و دانش‌آموزان</span>
+          <span class="ico material-symbols-rounded">school</span>
+        </button>
+        <button class="navbtn" data-page="exams">
+          <span class="label">آزمون‌ها</span>
+          <span class="ico material-symbols-rounded">description</span>
+        </button>
+        <button class="navbtn" data-page="tariffs">
+          <span class="label">تعرفه‌ها</span>
+          <span class="ico material-symbols-rounded">payments</span>
+        </button>
+        <button class="navbtn" data-page="teachers">
+          <span class="label">معلمان</span>
+          <span class="ico material-symbols-rounded">group</span>
+        </button>
+        <button class="navbtn" data-page="search">
+          <span class="label">جستجو</span>
+          <span class="ico material-symbols-rounded">search</span>
+        </button>
+        <button class="navbtn" data-page="notes">
+          <span class="label">یادداشت مالی</span>
+          <span class="ico material-symbols-rounded">receipt_long</span>
+        </button>
+      </nav>
+
+      <div class="side-actions">
+        <button class="btn primary" id="btnSave">ذخیره‌سازی</button>
+        <button class="btn" id="btnBackup">بکاپ JSON</button>
+        <label class="btn" style="display:flex; gap:10px; align-items:center; cursor:pointer;">
+          <span>بازگردانی JSON</span>
+          <input id="fileRestore" type="file" accept=".json" style="display:none">
+        </label>
+        <button class="btn" id="btnCloud">اتصال به اکسل آنلاین ☁️</button>
+        <button class="btn" id="btnCloudPull">دریافت از اکسل ☁️</button>
+        <button class="btn" id="btnAppearance">مشخصات ظاهری 🎨</button>
+        <button class="btn danger" id="btnLogout">خروج از حساب</button>
+      </div>
+
+      <div class="footer">ذخیره آفلاین + اکسل + داشبورد نموداری متنوع</div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="title" id="topTitle">داشبورد مالی</div>
+        <div class="chip" id="chipRole">نقش: -</div>
+        <div class="chip" id="chipScope">نمایش: کل سال</div>
+        <div class="spacer"></div>
+        <div class="mini">
+          <div class="chip" id="chipSaved">ذخیره نشده</div>
+          <div class="chip" id="chipCloud">ابر: تنظیم نشده</div>
+          <button class="btn ghost" id="btnQuickExportAll">خروجی اکسل خلاصه کل</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- Dashboard -->
+        <section id="page-dashboard" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="field">
+                <label>نمایش شهریه برای:</label>
+                <select id="dashScope"></select>
+              </div>
+              <div class="field">
+                <label>آستانه بدهی (برای میز کار/هایلایت):</label>
+                <input id="thresholdInput" inputmode="numeric" placeholder="مثلاً 300000" />
+              </div>
+              <div class="field">
+                <label>رنگ هایلایت بدهکاران:</label>
+                <input id="dangerColorInput" type="color" />
+              </div>
+              <div class="field" style="min-width:auto">
+                <label>&nbsp;</label>
+                <button class="btn primary" id="btnApplyThreshold">اعمال</button>
+              </div>
+              <div class="spacer"></div>
+              <div class="field" style="min-width:auto">
+                <label>&nbsp;</label>
+                <button class="btn" id="btnPrintDash">پرینت/ذخیره PDF داشبورد</button>
+              </div>
+            </div>
+            <div class="hint">داشبورد شامل نمودارهای مفهومی متنوع است و با تغییر داده‌ها خودکار به‌روز می‌شود.</div>
+          </div>
+
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 4;">
+              <h3>کل پرداخت‌شده (شهریه)</h3>
+              <div class="metric" id="mPaid">0 تومان</div>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+              <h3>کل باقیمانده (شهریه)</h3>
+              <div class="metric" id="mRemain">0 تومان</div>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+              <h3>مجموع هزینه آزمون‌ها (کل)</h3>
+              <div class="metric" id="mExam">0 تومان</div>
+            </div>
+
+            <div class="card" style="grid-column: span 6;">
+              <h3>Donut: پرداخت‌شده vs باقیمانده شهریه</h3>
+              <div id="chDonut" class="chart"></div>
+            </div>
+            <div class="card" style="grid-column: span 6;">
+              <h3>Gauge: نرخ وصول شهریه</h3>
+              <div id="chGauge" class="chart"></div>
+            </div>
+
+            <div class="card" style="grid-column: span 6;">
+              <h3>Stacked Bar: پرداخت/باقیمانده به تفکیک ماه</h3>
+              <div id="chStack" class="chart tall"></div>
+            </div>
+            <div class="card" style="grid-column: span 6;">
+              <h3>Line: روند تجمعی پرداخت‌ها</h3>
+              <div id="chLine" class="chart tall"></div>
+            </div>
+
+            <div class="card" style="grid-column: span 6;">
+              <h3>Heatmap: مانده بدهی بر اساس پایه-جنسیت</h3>
+              <div id="chHeat" class="chart"></div>
+            </div>
+            <div class="card" style="grid-column: span 6;">
+              <h3>Treemap: سهم پرداخت‌شده بر اساس کلاس</h3>
+              <div id="chTree" class="chart"></div>
+            </div>
+
+            <div class="card" style="grid-column: span 6;">
+              <h3>Radar: توزیع مانده بدهی بر اساس رشته</h3>
+              <div id="chRadar" class="chart"></div>
+            </div>
+            <div class="card" style="grid-column: span 6;">
+              <h3>Waterfall: بدهی گذشته + هزینه جاری - پرداختی</h3>
+              <div id="chWater" class="chart"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Workdesk -->
+        <section id="page-workdesk" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="field">
+                <label>نمایش بدهکاران بالاتر از آستانه:</label>
+                <input id="workdeskThreshold" inputmode="numeric" placeholder="از تنظیمات ظاهری می‌آید" />
+              </div>
+              <div class="field" style="min-width:auto">
+                <label>&nbsp;</label>
+                <button class="btn primary" id="btnRefreshWorkdesk">به‌روزرسانی</button>
+              </div>
+              <div class="spacer"></div>
+              <div class="hint">با دوبار کلیک روی ردیف، به همان کلاس/ماه منتقل می‌شوید.</div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:12px;">
+            <h3>لیست بدهکاران (مرتب‌سازی نزولی بر اساس مانده)</h3>
+            <div class="tableWrap">
+              <table id="tblWorkdesk">
+                <thead><tr>
+                  <th>نام</th><th>کد</th><th>کلاس</th><th>ماه</th>
+                  <th>پرداختی</th><th>مجموع بدهی</th><th>مانده</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Classes -->
+        <section id="page-classes" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="field"><label>پایه</label><select id="clsGrade"></select></div>
+              <div class="field"><label>جنسیت</label><select id="clsGender"></select></div>
+              <div class="field"><label>رشته</label><select id="clsStream"></select></div>
+              <div class="field"><label>ماه</label><select id="clsMonth"></select></div>
+
+              <div class="spacer"></div>
+
+              <button class="btn" id="btnClsImportXlsx">ورود از اکسل (خروجی همین برنامه)</button>
+              <input id="fileClsImportXlsx" type="file" accept=".xlsx" style="display:none">
+
+              <button class="btn" id="btnClsExportXlsx">خروجی اکسل</button>
+              <button class="btn primary" id="btnClsAddRow">افزودن دانش‌آموز</button>
+              <button class="btn danger" id="btnClsDelRow">حذف سطر</button>
+            </div>
+
+            <div class="sep"></div>
+            <div class="row">
+              <div class="chip" id="clsSumDebt">مجموع بدهی‌ها: 0 تومان</div>
+              <div class="chip" id="clsSumPaid">مجموع پرداختی‌ها: 0 تومان</div>
+              <div class="spacer"></div>
+              <div class="hint">ستون‌های محاسبه‌ای (مانده/هزینه/بدهی/جلسات) فقط خواندنی هستند.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3 id="clsTitle">جدول کلاس</h3>
+            <div class="tableWrap">
+              <table id="tblClasses">
+                <thead><tr id="clsHead"></tr></thead>
+                <tbody id="clsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Exams -->
+        <section id="page-exams" class="page">
+          <div class="card">
+            <div class="row">
+              <button class="btn primary" id="btnExamAdd">افزودن داوطلب</button>
+              <button class="btn danger" id="btnExamDel">حذف سطر</button>
+
+              <button class="btn" id="btnExamImportXlsx">ورود از اکسل</button>
+              <input id="fileExamImportXlsx" type="file" accept=".xlsx" style="display:none">
+
+              <button class="btn" id="btnExamExportXlsx">خروجی اکسل</button>
+
+              <div class="spacer"></div>
+
+              <div class="chip" id="examSumDebt">مجموع بدهی آزمون‌ها: 0 تومان</div>
+              <div class="chip" id="examSumPaid">مجموع پرداختی آزمون‌ها: 0 تومان</div>
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 7;">
+              <h3>جدول آزمون‌ها (کاملاً مجزا)</h3>
+              <div class="tableWrap">
+                <table id="tblExams">
+                  <thead><tr id="examHead"></tr></thead>
+                  <tbody id="examBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card" style="grid-column: span 5;">
+              <h3>Donut: وضعیت کلی آزمون‌ها</h3>
+              <div id="chExamDonut" class="chart tall"></div>
+              <div class="hint">در اعمال یادداشت مالی نوع «آزمون»، می‌توانید قسط را خودکار یا دستی تعیین کنید.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tariffs -->
+        <section id="page-tariffs" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="hint">برای هر پایه/جنسیت/رشته/درس، هزینه هر جلسه (تومان) را وارد کنید.</div>
+              <div class="spacer"></div>
+              <button class="btn" id="btnTariffExportXlsx">خروجی اکسل تعرفه‌ها</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>تعرفه‌ها</h3>
+            <div class="tableWrap">
+              <table id="tblTariffs">
+                <thead><tr>
+                  <th>پایه</th><th>جنسیت</th><th>رشته</th><th>درس</th><th>هزینه هر جلسه</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Teachers -->
+        <section id="page-teachers" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="field">
+                <label>ماه</label>
+                <select id="tchMonth"></select>
+              </div>
+
+              <button class="btn primary" id="btnTchAdd">افزودن معلم</button>
+              <button class="btn danger" id="btnTchDel">حذف سطر</button>
+
+              <button class="btn" id="btnTchExportXlsx">خروجی اکسل (ماه)</button>
+
+              <div class="spacer"></div>
+              <div class="hint">جمع حقوق = (ساعت×نرخ) + پاداش - کسورات | باقی‌مانده = جمع حقوق - پرداختی</div>
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 8;">
+              <h3>جدول معلمان</h3>
+              <div class="tableWrap">
+                <table id="tblTeachers">
+                  <thead><tr id="tchHead"></tr></thead>
+                  <tbody id="tchBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+              <h3>Bar: مانده پرداخت معلمان (ماه)</h3>
+              <div id="chTeacherBar" class="chart tall"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Search -->
+        <section id="page-search" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="field" style="flex:1; min-width:260px">
+                <label>نام یا کد داوطلب</label>
+                <input id="searchQuery" placeholder="مثال: ۱۲۳۴۵۶ یا علی رضایی" />
+              </div>
+              <div class="field" style="min-width:auto">
+                <label>&nbsp;</label>
+                <button class="btn primary" id="btnSearch">جستجو</button>
+              </div>
+              <div class="spacer"></div>
+              <div class="hint">با دوبار کلیک روی نتیجه، به همان کلاس/ماه می‌روید.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>نتایج</h3>
+            <div class="tableWrap">
+              <table id="tblSearch">
+                <thead><tr>
+                  <th>نام</th><th>کد</th><th>کلاس</th><th>ماه</th>
+                  <th>پرداختی</th><th>مجموع بدهی</th><th>مانده</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notes -->
+        <section id="page-notes" class="page">
+          <div class="card">
+            <div class="row">
+              <div class="field"><label>نوع</label>
+                <select id="noteType">
+                  <option value="tuition">شهریه</option>
+                  <option value="exam">آزمون</option>
+                </select>
+              </div>
+              <div class="field"><label>مبلغ (تومان)</label><input id="noteAmount" inputmode="numeric" placeholder="مثلاً 500000" /></div>
+              <div class="field"><label>کد داوطلب</label><input id="noteCode" placeholder="مثلاً ۱۲۳۴۵۶" /></div>
+              <div class="field"><label>ماه (اختیاری)</label><select id="noteMonth"></select></div>
+              <div class="field" style="flex:1; min-width:240px"><label>توضیح</label><input id="noteDesc" placeholder="مثلاً واریزی کارت به کارت..." /></div>
+
+              <div class="field" style="min-width:auto">
+                <label>&nbsp;</label>
+                <button class="btn primary" id="btnAddNote">ثبت یادداشت مالی</button>
+              </div>
+            </div>
+            <div class="hint">
+              این بخش برای زمانی است که واریز انجام شده ولی هنوز داخل جدول‌ها اعمال نشده.
+              بعداً با دکمه «اعمال»، مبلغ روی دانش‌آموز/آزمون اعمال می‌شود.
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 7;">
+              <h3>لیست یادداشت‌های مالی</h3>
+              <div class="tableWrap">
+                <table id="tblNotes">
+                  <thead><tr>
+                    <th>تاریخ</th><th>نوع</th><th>مبلغ</th><th>کد</th><th>ماه</th><th>توضیح</th><th>وضعیت</th><th>عملیات</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card" style="grid-column: span 5;">
+              <h3>Charts: وضعیت یادداشت‌ها</h3>
+              <div id="chNotePie" class="chart short"></div>
+              <div id="chNoteLine" class="chart short" style="margin-top:10px;"></div>
+              <div class="hint">نمودار بالا تعداد Pending/Applied و نمودار پایین روند مبلغ ثبت‌شده است.</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modalBack" id="loginBack">
+    <div class="modal">
+      <h2>ورود به نرم‌افزار</h2>
+      <div class="hint">دو سطح دسترسی مثل نسخه پایتون:</div>
+      <ul class="hint">
+        <li>9426 → admin (کامل)</li>
+        <li>9426483 → limited (بدون داشبورد مالی و جمع‌های مدیریتی)</li>
+      </ul>
+      <div class="row">
+        <div class="field" style="flex:1">
+          <label>رمز عبور</label>
+          <input id="loginPwd" type="password" placeholder="9426 یا 9426483" />
+        </div>
+        <div class="field" style="min-width:auto">
+          <label>&nbsp;</label>
+          <button class="btn primary" id="btnLogin">ورود</button>
+        </div>
+      </div>
+      <div class="hint" id="loginErr" style="color:var(--danger); display:none; margin-top:8px;">رمز عبور اشتباه است.</div>
+    </div>
+  </div>
+
+  <!-- Appearance Modal -->
+  <div class="modalBack" id="appearanceBack">
+    <div class="modal">
+      <h2>تنظیمات ظاهری 🎨</h2>
+      <div class="grid">
+        <div class="card" style="grid-column: span 6;">
+          <div class="field">
+            <label>تم</label>
+            <select id="appTheme">
+              <option value="dark_blue">تیره آبی (پیش‌فرض)</option>
+              <option value="dark_green">تیره سبز</option>
+              <option value="light">روشن</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>فونت</label>
+            <select id="appFont">
+              <option value="Vazirmatn">Vazirmatn</option>
+              <option value="Segoe UI">Segoe UI</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Calibri">Calibri</option>
+              <option value="system-ui">System</option>
+            </select>
+          </div>
+        </div>
+        <div class="card" style="grid-column: span 6;">
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label>اندازه فونت</label>
+              <input id="appFontSize" inputmode="numeric" placeholder="10" />
+            </div>
+            <div class="field" style="flex:1">
+              <label>متن‌ها بولد باشند؟</label>
+              <select id="appBold">
+                <option value="0">خیر</option>
+                <option value="1">بله</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div class="field" style="flex:1">
+              <label>برجسته‌کردن بدهکاران</label>
+              <select id="appDebtHighlight">
+                <option value="1">فعال</option>
+                <option value="0">غیرفعال</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label>آستانه بدهی (تومان)</label>
+              <input id="appDebtThreshold" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:12px;">
+        <button class="btn" id="btnCloseAppearance">انصراف</button>
+        <button class="btn primary" id="btnSaveAppearance">ذخیره</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloud Sync Modal -->
+  <div class="modalBack" id="cloudBack">
+    <div class="modal">
+      <h2>اتصال به اکسل آنلاین (Google Sheets) ☁️</h2>
+      <div class="hint">
+        این بخش برای ذخیره/دریافت اطلاعات روی <b>Google Sheets</b> از طریق <b>Apps Script Web App</b> است.
+        <br/>
+        نکته: اگر این فایل را عمومی (مثلاً GitHub Pages عمومی) منتشر کنید، هر چیزی که داخل کد می‌گذارید (مثل لینک وب‌اپ یا توکن) قابل مشاهده است.
+      </div>
+
+      <div class="field" style="margin-top:10px;">
+        <label>لینک Web App (پایانش /exec باشد)</label>
+        <input id="cloudUrl" dir="ltr" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+      </div>
+
+      <div class="field" style="margin-top:10px;">
+        <label>توکن اختیاری (برای جلوگیری از دستکاری اتفاقی)</label>
+        <input id="cloudToken" dir="ltr" placeholder="مثلاً یک عبارت دلخواه" />
+      </div>
+
+      <div class="hint" style="margin-top:10px;">
+        دکمه «تست اتصال» داده‌ها را از شیت می‌خواند. دکمه «ذخیره تنظیمات» فقط همین تنظیمات را روی این دستگاه ذخیره می‌کند.
+      </div>
+
+      <div class="actions" style="margin-top:12px;">
+        <button class="btn" id="btnCloseCloud">انصراف</button>
+        <button class="btn" id="btnTestCloud">تست اتصال</button>
+        <button class="btn primary" id="btnSaveCloud">ذخیره تنظیمات</button>
+      </div>
+    </div>
+  </div>
+
+
+<script>
+/* =========================
+   داده‌ها و ثابت‌ها (مثل پایتون)
+========================= */
+const GRADES = ["دهم", "یازدهم", "دوازدهم"];
+const GENDERS = ["پسرانه", "دخترانه"];
+const STREAMS_SUBJECTS = {
+  "تجربی": ["عمومی", "زیست", "شیمی", "فیزیک", "ریاضی"],
+  "انسانی": ["اقتصاد", "منطق/ فلسفه", "عربی", "علوم و فنون", "ریاضی"],
+};
+const EXTRA_SUBJECT = "درس اضافه";
+const PERSIAN_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+
+const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
+const EN_DIGITS = "0123456789";
+const DIGIT_MAP = Object.fromEntries([...PERSIAN_DIGITS].map((d,i)=>[d, EN_DIGITS[i]]));
+
+const STORAGE_KEY = "academy_data_html_v4";
+
+/* =========================
+   Cloud Sync Config
+   ذخیره/دریافت اطلاعات روی Google Sheets (از طریق Apps Script Web App)
+   - لینک وب‌اپ باید به /exec ختم شود
+========================= */
+const CLOUD_CFG_KEY = "academy_cloud_cfg_v1";
+const CLOUD_DEFAULT = { webAppUrl: "https://script.google.com/macros/s/AKfycbxvPhutMXRKIKgrhqXDsiH4F-qhYILvDBdO-ilAVRgknpomab-WZP2xWZGO84n9psFGYQ/exec", token: "AKfycbxvPhutMXRKIKgrhqXDsiH4F-qhYILvDBdO-ilAVRgknpomab-WZP2xWZGO84n9psFGYQ", timeoutMs: 15000 };
+
+function getCloudCfg(){
+  try{
+    const raw = localStorage.getItem(CLOUD_CFG_KEY);
+    if(!raw) return {...CLOUD_DEFAULT};
+    const obj = JSON.parse(raw);
+    return {...CLOUD_DEFAULT, ...(obj||{})};
+  }catch(e){
+    return {...CLOUD_DEFAULT};
+  }
+}
+function setCloudCfg(cfg){
+  localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify({...CLOUD_DEFAULT, ...(cfg||{})}));
+}
+function isCloudConfigured(){
+  const cfg = getCloudCfg();
+  return !!(cfg.webAppUrl && cfg.webAppUrl.trim().length>0);
+}
+
+function updateCloudChip(text, kind="idle"){
+  const el = document.getElementById("chipCloud");
+  if(!el) return;
+  el.textContent = text;
+
+  // colors
+  const ok = {border:"rgba(46,211,154,.55)", bg:"rgba(46,211,154,.14)", fg:"var(--good)"};
+  const warn = {border:"rgba(255,197,61,.55)", bg:"rgba(255,197,61,.14)", fg:"var(--warn)"};
+  const bad = {border:"rgba(255,82,82,.55)", bg:"rgba(255,82,82,.14)", fg:"var(--danger)"};
+  const idle = {border:"rgba(255,255,255,.18)", bg:"rgba(255,255,255,.06)", fg:"var(--muted)"};
+  const map = {ok, warn, bad, idle};
+  const c = map[kind] || idle;
+
+  el.style.borderColor = c.border;
+  el.style.background = c.bg;
+  el.style.color = c.fg;
+}
+
+function initCloudUI(){
+  const cfg = getCloudCfg();
+  if(cfg.webAppUrl){
+    updateCloudChip("ابر: آماده", "idle");
+  }else{
+    updateCloudChip("ابر: تنظیم نشده", "idle");
+  }
+}
+
+function openCloudModal(){
+  const cfg = getCloudCfg();
+  document.getElementById("cloudUrl").value = cfg.webAppUrl || "";
+  document.getElementById("cloudToken").value = cfg.token || "";
+  document.getElementById("cloudBack").classList.add("show");
+}
+function closeCloudModal(){
+  document.getElementById("cloudBack").classList.remove("show");
+}
+
+function saveCloudCfgFromModal(){
+  const url = (document.getElementById("cloudUrl").value||"").trim();
+  const token = (document.getElementById("cloudToken").value||"").trim();
+  setCloudCfg({webAppUrl:url, token});
+  initCloudUI();
+  closeCloudModal();
+  alert("تنظیمات اکسل آنلاین ذخیره شد ✅");
+}
+
+/* =========================
+   Cloud Sync (JSONP GET + iframe POST)  — سازگار با سایت استاتیک
+========================= */
+function cloudJsonpGet(){
+  const cfg = getCloudCfg();
+  return new Promise((resolve, reject)=>{
+    if(!cfg.webAppUrl) return reject(new Error("Cloud URL not set"));
+
+    const cb = "cloud_cb_" + Date.now() + "_" + Math.floor(Math.random()*1e9);
+    const cleanup = (scriptEl)=>{
+      try{ delete window[cb]; }catch{}
+      if(scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+    };
+
+    let done = false;
+    const t = setTimeout(()=>{
+      if(done) return;
+      done = true;
+      cleanup(script);
+      reject(new Error("timeout"));
+    }, cfg.timeoutMs || 15000);
+
+    window[cb] = (payload)=>{
+      if(done) return;
+      done = true;
+      clearTimeout(t);
+      cleanup(script);
+      resolve(payload);
+    };
+
+    const params = new URLSearchParams();
+    params.set("action", "get");
+    params.set("callback", cb);
+    params.set("_", String(Date.now()));
+    if(cfg.token) params.set("token", cfg.token);
+
+    const script = document.createElement("script");
+    script.src = cfg.webAppUrl + "?" + params.toString();
+    script.onerror = ()=>{
+      if(done) return;
+      done = true;
+      clearTimeout(t);
+      cleanup(script);
+      reject(new Error("network"));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+function cloudPostPayload(rawJson){
+  const cfg = getCloudCfg();
+  return new Promise((resolve, reject)=>{
+    if(!cfg.webAppUrl) return reject(new Error("Cloud URL not set"));
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.name = "cloud_iframe_" + Date.now() + "_" + Math.floor(Math.random()*1e9);
+
+    const form = document.createElement("form");
+    form.style.display = "none";
+    form.method = "POST";
+
+    const params = new URLSearchParams();
+    params.set("action", "save");
+    if(cfg.token) params.set("token", cfg.token);
+    form.action = cfg.webAppUrl + "?" + params.toString();
+    form.target = iframe.name;
+
+    const ta = document.createElement("textarea");
+    ta.name = "payload";
+    ta.value = rawJson || "{}";
+    form.appendChild(ta);
+
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+
+    let done = false;
+    const cleanup = ()=>{
+      try{ form.remove(); }catch{}
+      try{ iframe.remove(); }catch{}
+    };
+
+    const t = setTimeout(()=>{
+      if(done) return;
+      done = true;
+      cleanup();
+      reject(new Error("timeout"));
+    }, cfg.timeoutMs || 15000);
+
+    iframe.onload = ()=>{
+      if(done) return;
+      done = true;
+      clearTimeout(t);
+      cleanup();
+      resolve(true);
+    };
+    iframe.onerror = ()=>{
+      if(done) return;
+      done = true;
+      clearTimeout(t);
+      cleanup();
+      reject(new Error("network"));
+    };
+
+    try{
+      form.submit();
+    }catch(e){
+      if(done) return;
+      done = true;
+      clearTimeout(t);
+      cleanup();
+      reject(e);
+    }
+  });
+}
+
+async function pullFromCloud(applyToUI=true){
+  if(!isCloudConfigured()){
+    updateCloudChip("ابر: تنظیم نشده", "idle");
+    throw new Error("not_configured");
+  }
+  updateCloudChip("ابر: در حال دریافت…", "warn");
+  const res = await cloudJsonpGet();
+
+  if(!res || res.ok!==true){
+    updateCloudChip("ابر: خطا در دریافت", "bad");
+    throw new Error("bad_response");
+  }
+
+  const raw = res.data || "{}";
+  // data can be object or string
+  const rawStr = (typeof raw === "string") ? raw : JSON.stringify(raw);
+  if(rawStr && rawStr.trim()){
+    localStorage.setItem(STORAGE_KEY, rawStr);
+  }
+
+  updateCloudChip("ابر: دریافت شد ✅", "ok");
+  if(applyToUI){
+    // refresh runtime state
+    state = {appearance:{...APPEARANCE_DEFAULTS}, tariffs:{}, classes:{}, teachers:{}, exams:[], financialNotes:[]};
+    initCloudUI();
+  // اگر اکسل آنلاین تنظیم شده باشد، ابتدا داده‌ها را از آن می‌خوانیم
+  try{ if(isCloudConfigured()) await pullFromCloud(false); }catch(e){ /* ignore */ }
+
+  loadData();
+    ensureTariffsDefaults();
+    applyAppearance();
+    const active = document.querySelector(".navbtn.active")?.dataset.page || (session.role==="admin"?"dashboard":"classes");
+    showPage(active);
+  }
+  return true;
+}
+
+async function pushToCloud(){
+  if(!isCloudConfigured()){
+    updateCloudChip("ابر: تنظیم نشده", "idle");
+    throw new Error("not_configured");
+  }
+  updateCloudChip("ابر: در حال ارسال…", "warn");
+  const raw = localStorage.getItem(STORAGE_KEY) || "{}";
+  await cloudPostPayload(raw);
+  updateCloudChip("ابر: ذخیره شد ✅ (" + new Date().toLocaleString("fa-IR") + ")", "ok");
+  return true;
+}
+
+async function saveAll(showAlert=true){
+  saveData(); // local
+  if(!isCloudConfigured()){
+    if(showAlert) alert("ذخیره شد ✅ (فعلاً فقط روی همین دستگاه)\nبرای ذخیره روی اکسل آنلاین: «اتصال به اکسل آنلاین ☁️» را تنظیم کن.");
+    return;
+  }
+  try{
+    await pushToCloud();
+    if(showAlert) alert("ذخیره شد ✅ و روی اکسل آنلاین هم ذخیره شد ☁️");
+  }catch(e){
+    console.warn("Cloud save failed", e);
+    updateCloudChip("ابر: خطا در ذخیره ❌", "bad");
+    if(showAlert) alert("ذخیره محلی انجام شد ✅\nاما ذخیره روی اکسل آنلاین انجام نشد.\nلینک Web App / اینترنت را بررسی کن و دوباره «ذخیره‌سازی» بزن.");
+  }
+}
+
+async function testCloudConnection(){
+  try{
+    await pullFromCloud(false);
+    alert("اتصال برقرار است ✅\n(داده از شیت خوانده شد)");
+  }catch(e){
+    alert("اتصال برقرار نشد ❌\nلینک Web App را بررسی کن.");
+  }
+}
+
+
+/* Appearance defaults (مثل پایتون) */
+const APPEARANCE_DEFAULTS = {
+  theme: "light",
+  font_family: "Vazirmatn",
+  font_size: 10,
+  font_bold: false,
+  debt_highlight_enable: true,
+  debt_highlight_threshold: 0,
+  debt_highlight_color: "#4d1b1b",
+};
+
+/* =========================
+   State
+========================= */
+let state = {
+  appearance: {...APPEARANCE_DEFAULTS},
+  tariffs: {},         // key: "grade|gender|stream|subject" -> price int
+  classes: {},         // "grade-gender-stream" -> {monthName:[students]}
+  teachers: {},        // monthName -> rows[]
+  exams: [],           // list
+  financialNotes: [],  // list of pending/applied deposits
+};
+
+let session = {
+  role: null, // "admin" | "limited"
+  dirty: false,
+};
+
+let charts = {}; // echarts instances
+
+/* =========================
+   Helpers (مثل پایتون)
+========================= */
+function norm_text_simple(s){
+  if(s===null || s===undefined) return "";
+  s = String(s).trim();
+  s = s.replace(/\u200c/g,"");
+  // normalize Arabic chars
+  s = s.replace(/ي/g,"Υ").replace(/ك/g,"ک").replace(/Υ/g,"ی");
+  // convert Persian digits
+  s = [...s].map(ch => (DIGIT_MAP[ch] ?? ch)).join("");
+  return s;
+}
+function only_digits(s){
+  s = norm_text_simple(s);
+  return [...s].filter(ch => ch>="0" && ch<="9").join("");
+}
+function to_int(text){
+  if(text===null || text===undefined) return 0;
+  let t = String(text).replace(/,/g,"").trim();
+  if(t==="") return 0;
+  const n = Number(t);
+  return Number.isFinite(n) ? Math.trunc(n) : 0;
+}
+function format_int(value){
+  try{
+    const n = Math.trunc(Number(value));
+    if(!Number.isFinite(n)) return "";
+    return n.toLocaleString("en-US");
+  }catch{ return ""; }
+}
+function nowFa(){
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), day = String(d.getDate()).padStart(2,"0");
+  const hh = String(d.getHours()).padStart(2,"0"), mm = String(d.getMinutes()).padStart(2,"0");
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+function keyTariff(g,sex,stream,subj){ return `${g}|${sex}|${stream}|${subj}`; }
+function classTitle(g,sex,stream){ return `${g}-${sex}-${stream}`; }
+
+function getSubjects(stream){
+  return [...(STREAMS_SUBJECTS[stream] || []), EXTRA_SUBJECT];
+}
+
+/* محاسبات اصلی (مثل پایتون) */
+function compute_student_totals(grade, gender, stream, student){
+  const sessions = student.sessions || {};
+  const prev_debt = to_int(student.prev_debt || 0);
+  const paid = to_int(student.paid || 0);
+
+  let total_sessions = 0;
+  let current_cost = 0;
+
+  const subjects = getSubjects(stream);
+  for(const subj of subjects){
+    const count = to_int(sessions[subj] || 0);
+    total_sessions += count;
+    const price = to_int(state.tariffs[keyTariff(grade,gender,stream,subj)] || 0);
+    current_cost += count * price;
+  }
+
+  const total_debt = prev_debt + current_cost;
+  const remain = total_debt - paid;
+
+  return { total_sessions, current_cost, total_debt, remain };
+}
+
+function compute_summary(month_name=null){
+  let total_paid = 0;
+  let total_remain_positive = 0;
+
+  for(const title of Object.keys(state.classes)){
+    const parts = title.split("-");
+    if(parts.length!==3) continue;
+    const [grade, gender, stream] = parts;
+    const months_map = state.classes[title] || {};
+    for(const m of Object.keys(months_map)){
+      if(month_name && m!==month_name) continue;
+      const students = months_map[m] || [];
+      for(const stu of students){
+        const totals = compute_student_totals(grade, gender, stream, stu);
+        total_paid += to_int(stu.paid || 0);
+        if(totals.remain > 0) total_remain_positive += totals.remain;
+      }
+    }
+  }
+  return [total_paid, total_remain_positive];
+}
+
+function compute_exam_aggregate(){
+  let total_debt = 0, total_paid = 0;
+  for(const acc of state.exams){
+    total_debt += to_int(acc.total_debt || 0);
+    let paid = 0;
+    for(let i=1;i<=5;i++) paid += to_int(acc["inst"+i] || 0);
+    total_paid += paid;
+  }
+  return [total_debt, total_paid];
+}
+
+/* =========================
+   Persistence
+========================= */
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return;
+  try{
+    const data = JSON.parse(raw);
+
+    // tariffs
+    state.tariffs = {};
+    if(Array.isArray(data.tariffs)){
+      for(const row of data.tariffs){
+        const g = row.grade||"", sex=row.gender||"", st=row.stream||"", subj=row.subject||"";
+        state.tariffs[keyTariff(g,sex,st,subj)] = to_int(row.price||0);
+      }
+    }else if(data.tariffs && typeof data.tariffs === "object"){
+      // allow map style
+      state.tariffs = data.tariffs;
+    }
+
+    // classes (month map)
+    state.classes = {};
+    if(data.classes && typeof data.classes==="object"){
+      for(const title of Object.keys(data.classes)){
+        const val = data.classes[title];
+        if(Array.isArray(val)){
+          state.classes[title] = {"فروردین": val};
+        }else if(val && typeof val==="object"){
+          const month_map = {};
+          for(const m of Object.keys(val)){
+            if(Array.isArray(val[m])) month_map[m] = val[m];
+          }
+          state.classes[title] = month_map;
+        }
+      }
+    }
+
+    // teachers
+    state.teachers = (data.teachers && typeof data.teachers==="object") ? data.teachers : {};
+
+    // exams
+    state.exams = Array.isArray(data.exams) ? data.exams : [];
+
+    // financial notes
+    state.financialNotes = Array.isArray(data.financialNotes) ? data.financialNotes : [];
+
+    // appearance
+    if(data.appearance && typeof data.appearance==="object"){
+      state.appearance = {...APPEARANCE_DEFAULTS, ...data.appearance};
+      if(state.appearance.debt_highlight_threshold===undefined) state.appearance.debt_highlight_threshold = 0;
+    }
+  }catch(e){
+    console.warn("loadData error", e);
+  }
+}
+
+function saveData(){
+  // export like python structure for tariffs
+  const tariffs_list = [];
+  for(const g of GRADES){
+    for(const sex of GENDERS){
+      for(const stream of Object.keys(STREAMS_SUBJECTS)){
+        for(const subj of [...STREAMS_SUBJECTS[stream], EXTRA_SUBJECT]){
+          const price = to_int(state.tariffs[keyTariff(g,sex,stream,subj)] || 0);
+          tariffs_list.push({grade:g, gender:sex, stream, subject:subj, price});
+        }
+      }
+    }
+  }
+
+  const data = {
+    tariffs: tariffs_list,
+    classes: state.classes,
+    appearance: state.appearance,
+    teachers: state.teachers,
+    exams: state.exams,
+    financialNotes: state.financialNotes,
+  };
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  session.dirty = false;
+  updateDirtyChip();
+}
+
+/* =========================
+   UI Utils
+========================= */
+function setDirty(){
+  session.dirty = true;
+  updateDirtyChip();
+}
+function updateDirtyChip(){
+  const el = document.getElementById("chipSaved");
+  el.textContent = session.dirty ? "ذخیره نشده" : "ذخیره شد";
+  el.style.borderColor = session.dirty ? "rgba(255,197,61,.55)" : "rgba(46,211,154,.55)";
+  el.style.background = session.dirty ? "rgba(255,197,61,.14)" : "rgba(46,211,154,.14)";
+  el.style.color = session.dirty ? "var(--warn)" : "var(--good)";
+}
+
+function applyAppearance(){
+  const ap = state.appearance || {...APPEARANCE_DEFAULTS};
+  document.body.setAttribute("data-theme", ap.theme || "dark_blue");
+  document.documentElement.style.setProperty("--dangerRow", ap.debt_highlight_color || "#4d1b1b");
+
+  const fs = Math.max(8, Math.min(18, to_int(ap.font_size || 10)));
+  const fam = ap.font_family || "Vazirmatn";
+  document.body.style.fontFamily = fam + ", " + getComputedStyle(document.body).fontFamily;
+  document.body.style.fontSize = fs + "px";
+  document.body.style.fontWeight = ap.font_bold ? "700" : "400";
+
+  // inputs sync
+  document.getElementById("thresholdInput").value = format_int(ap.debt_highlight_threshold || 0);
+  document.getElementById("workdeskThreshold").value = format_int(ap.debt_highlight_threshold || 0);
+  document.getElementById("dangerColorInput").value = ap.debt_highlight_color || "#4d1b1b";
+}
+
+/* =========================
+   Navigation
+========================= */
+function showPage(pageId){
+  const pages = document.querySelectorAll(".page");
+  pages.forEach(p=>p.classList.remove("active"));
+  const p = document.getElementById("page-"+pageId);
+  if(p) p.classList.add("active");
+
+  // active nav btn
+  document.querySelectorAll(".navbtn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.page===pageId);
+  });
+
+  const titles = {
+    dashboard:"داشبورد مالی",
+    workdesk:"میز کار",
+    classes:"کلاس‌ها و دانش‌آموزان",
+    exams:"آزمون‌ها",
+    tariffs:"تعرفه‌ها",
+    teachers:"معلمان",
+    search:"جستجو",
+    notes:"یادداشت مالی",
+  };
+  document.getElementById("topTitle").textContent = titles[pageId] || "—";
+
+  // render page specific
+  if(pageId==="dashboard") renderDashboard();
+  if(pageId==="workdesk") renderWorkdesk();
+  if(pageId==="classes") renderClasses();
+  if(pageId==="exams") renderExams();
+  if(pageId==="tariffs") renderTariffs();
+  if(pageId==="teachers") renderTeachers();
+  if(pageId==="search") renderSearchResults([]);
+  if(pageId==="notes") renderNotes();
+}
+
+/* =========================
+   Role / Login
+========================= */
+function openLogin(){
+  document.getElementById("loginBack").classList.add("show");
+  document.getElementById("loginPwd").value = "";
+  document.getElementById("loginErr").style.display = "none";
+}
+function closeLogin(){
+  document.getElementById("loginBack").classList.remove("show");
+}
+function setRole(role){
+  session.role = role;
+  // (برای اینکه هر بار ورود رمز پرسیده شود) نقش ذخیره نمی‌شود.
+
+  document.getElementById("chipRole").textContent = `نقش: ${role}`;
+
+  // limited: hide dashboard + sums
+  const dashBtn = document.querySelector('.navbtn[data-page="dashboard"]');
+  if(role==="limited"){
+    dashBtn.style.display = "none";
+    // auto go classes
+    showPage("classes");
+  }else{
+    dashBtn.style.display = "";
+    showPage("dashboard");
+  }
+}
+function logout(){
+  sessionStorage.removeItem("academy_role");
+  session.role = null;
+  openLogin();
+}
+
+/* =========================
+   Dashboard - aggregations & charts
+========================= */
+function monthlyAggregates(){
+  // returns arrays aligned with PERSIAN_MONTHS
+  const paidByMonth = PERSIAN_MONTHS.map(()=>0);
+  const remainByMonth = PERSIAN_MONTHS.map(()=>0);
+
+  for(const title of Object.keys(state.classes)){
+    const parts = title.split("-");
+    if(parts.length!==3) continue;
+    const [grade, gender, stream] = parts;
+    const months_map = state.classes[title] || {};
+    for(const [mName, students] of Object.entries(months_map)){
+      const idx = PERSIAN_MONTHS.indexOf(mName);
+      if(idx<0) continue;
+      for(const stu of (students||[])){
+        const totals = compute_student_totals(grade, gender, stream, stu);
+        paidByMonth[idx] += to_int(stu.paid||0);
+        if(totals.remain>0) remainByMonth[idx] += totals.remain;
+      }
+    }
+  }
+  return {paidByMonth, remainByMonth};
+}
+
+function classPaidTree(monthName=null){
+  const nodes = [];
+  for(const title of Object.keys(state.classes)){
+    const months_map = state.classes[title] || {};
+    let sum = 0;
+    for(const [m, students] of Object.entries(months_map)){
+      if(monthName && m!==monthName) continue;
+      for(const stu of (students||[])) sum += to_int(stu.paid||0);
+    }
+    if(sum>0) nodes.push({name:title, value:sum});
+  }
+  nodes.sort((a,b)=>b.value-a.value);
+  return nodes.slice(0, 18);
+}
+
+function heatmapRemainByGradeGender(monthName=null){
+  // grid: grade x gender
+  const grades = GRADES, genders = GENDERS;
+  const values = [];
+  for(let gi=0; gi<grades.length; gi++){
+    for(let si=0; si<genders.length; si++){
+      let sumRemain = 0;
+      for(const title of Object.keys(state.classes)){
+        const parts = title.split("-");
+        if(parts.length!==3) continue;
+        const [g, sex, stream] = parts;
+        if(g!==grades[gi] || sex!==genders[si]) continue;
+
+        const months_map = state.classes[title] || {};
+        for(const [m, students] of Object.entries(months_map)){
+          if(monthName && m!==monthName) continue;
+          for(const stu of (students||[])){
+            const totals = compute_student_totals(g, sex, stream, stu);
+            if(totals.remain>0) sumRemain += totals.remain;
+          }
+        }
+      }
+      values.push([si, gi, sumRemain]); // x=gender, y=grade
+    }
+  }
+  return {grades, genders, values};
+}
+
+function radarRemainByStream(monthName=null){
+  const streams = Object.keys(STREAMS_SUBJECTS);
+  const vals = streams.map(()=>0);
+
+  for(const title of Object.keys(state.classes)){
+    const parts = title.split("-");
+    if(parts.length!==3) continue;
+    const [grade, gender, stream] = parts;
+    const si = streams.indexOf(stream);
+    if(si<0) continue;
+
+    const months_map = state.classes[title] || {};
+    for(const [m, students] of Object.entries(months_map)){
+      if(monthName && m!==monthName) continue;
+      for(const stu of (students||[])){
+        const totals = compute_student_totals(grade, gender, stream, stu);
+        if(totals.remain>0) vals[si] += totals.remain;
+      }
+    }
+  }
+  return {streams, vals};
+}
+
+function renderDashboard(){
+  const scope = document.getElementById("dashScope").value || "";
+  const monthName = scope==="_all" ? null : scope;
+
+  document.getElementById("chipScope").textContent = monthName ? `نمایش: ${monthName}` : "نمایش: کل سال";
+
+  const [tuitionPaid, tuitionRemain] = compute_summary(monthName);
+  const [examTotal, examPaid] = compute_exam_aggregate();
+
+  document.getElementById("mPaid").textContent = `${format_int(tuitionPaid)} تومان`;
+  document.getElementById("mRemain").textContent = `${format_int(tuitionRemain)} تومان`;
+  document.getElementById("mExam").textContent = `${format_int(examTotal)} تومان`;
+
+  // charts config base
+  const bg = "transparent";
+  const textColor = getComputedStyle(document.body).getPropertyValue("--text").trim() || "#F6F7FB";
+  const muted = getComputedStyle(document.body).getPropertyValue("--muted").trim() || "rgba(246,247,251,.68)";
+
+  function ensureChart(id){
+    if(charts[id]) return charts[id];
+    const el = document.getElementById(id);
+    charts[id] = echarts.init(el, null, {renderer:"canvas"});
+    return charts[id];
+  }
+
+  // Donut
+  const donut = ensureChart("chDonut");
+  donut.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{trigger:"item"},
+    legend:{bottom:0, textStyle:{color:muted}},
+    series:[{
+      name:"شهریه",
+      type:"pie",
+      radius:["55%","78%"],
+      avoidLabelOverlap:true,
+      itemStyle:{borderRadius:12, borderColor:"rgba(255,255,255,.10)", borderWidth:1},
+      label:{color:textColor},
+      data:[
+        {value: tuitionPaid, name:"پرداخت‌شده"},
+        {value: tuitionRemain, name:"باقی‌مانده"},
+      ].filter(x=>x.value>0).length ? [
+        {value: tuitionPaid, name:"پرداخت‌شده"},
+        {value: tuitionRemain, name:"باقی‌مانده"},
+      ].filter(x=>x.value>0) : [{value:1, name:"بدون داده"}]
+    }]
+  }, true);
+
+  // Gauge
+  const gauge = ensureChart("chGauge");
+  const denom = (tuitionPaid + tuitionRemain);
+  const rate = denom>0 ? Math.round((tuitionPaid/denom)*100) : 0;
+  gauge.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    series:[{
+      type:"gauge",
+      startAngle:200,
+      endAngle:-20,
+      min:0, max:100,
+      progress:{show:true, width:16},
+      axisLine:{lineStyle:{width:16}},
+      axisTick:{show:false},
+      splitLine:{length:10, lineStyle:{color:"rgba(255,255,255,.18)"}},
+      axisLabel:{color:muted},
+      pointer:{show:false},
+      anchor:{show:false},
+      title:{offsetCenter:[0,"70%"], color:muted, fontSize:12},
+      detail:{valueAnimation:true, formatter:"{value}%", color:textColor, fontSize:22, fontWeight:"bolder"},
+      data:[{value: rate, name:"نرخ وصول"}]
+    }]
+  }, true);
+
+  // Monthly stacked bar & cumulative line
+  const {paidByMonth, remainByMonth} = monthlyAggregates();
+
+  const stack = ensureChart("chStack");
+  stack.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{trigger:"axis"},
+    legend:{bottom:0, textStyle:{color:muted}},
+    grid:{left:10,right:10,top:20,bottom:52,containLabel:true},
+    xAxis:{type:"category", data:PERSIAN_MONTHS, axisLabel:{color:muted}},
+    yAxis:{type:"value", axisLabel:{color:muted}},
+    series:[
+      {name:"پرداخت‌شده", type:"bar", stack:"t", data: paidByMonth, emphasis:{focus:"series"}},
+      {name:"باقی‌مانده", type:"bar", stack:"t", data: remainByMonth, emphasis:{focus:"series"}},
+    ]
+  }, true);
+
+  const line = ensureChart("chLine");
+  let cum = 0;
+  const cumPaid = paidByMonth.map(v=> (cum += v));
+  line.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{trigger:"axis"},
+    grid:{left:10,right:10,top:20,bottom:42,containLabel:true},
+    xAxis:{type:"category", data:PERSIAN_MONTHS, axisLabel:{color:muted}},
+    yAxis:{type:"value", axisLabel:{color:muted}},
+    series:[
+      {name:"تجمعی پرداخت", type:"line", smooth:true, data:cumPaid, areaStyle:{}},
+      {name:"باقی‌مانده ماهانه", type:"line", smooth:true, data:remainByMonth}
+    ],
+    legend:{bottom:0, textStyle:{color:muted}}
+  }, true);
+
+  // Heatmap
+  const heat = ensureChart("chHeat");
+  const hm = heatmapRemainByGradeGender(monthName);
+  heat.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{position:"top", formatter: (p)=>{
+      const g = hm.grades[p.value[1]];
+      const s = hm.genders[p.value[0]];
+      return `${g} / ${s}<br/>مانده: ${format_int(p.value[2])} تومان`;
+    }},
+    grid:{top:20, left:80, right:10, bottom:30},
+    xAxis:{type:"category", data:hm.genders, axisLabel:{color:muted}},
+    yAxis:{type:"category", data:hm.grades, axisLabel:{color:muted}},
+    visualMap:{
+      min:0, max: Math.max(...hm.values.map(v=>v[2]), 1),
+      calculable:true, orient:"horizontal", left:"center", bottom:0,
+      textStyle:{color:muted}
+    },
+    series:[{
+      type:"heatmap",
+      data:hm.values,
+      emphasis:{itemStyle:{shadowBlur:10, shadowColor:"rgba(0,0,0,.35)"}},
+      label:{show:false}
+    }]
+  }, true);
+
+  // Treemap
+  const tree = ensureChart("chTree");
+  const nodes = classPaidTree(monthName);
+  tree.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{formatter: (p)=> `${p.name}<br/>پرداخت: ${format_int(p.value)} تومان`},
+    series:[{
+      type:"treemap",
+      data: nodes.length ? nodes : [{name:"بدون داده", value:1}],
+      roam:false,
+      label:{show:true, color:textColor},
+      upperLabel:{show:false},
+      itemStyle:{borderColor:"rgba(255,255,255,.10)", borderWidth:1, borderRadius:8},
+    }]
+  }, true);
+
+  // Radar
+  const radar = ensureChart("chRadar");
+  const rd = radarRemainByStream(monthName);
+  const maxVal = Math.max(...rd.vals, 1);
+  radar.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{},
+    radar:{
+      indicator: rd.streams.map(s=>({name:s, max:maxVal})),
+      axisName:{color:muted}
+    },
+    series:[{
+      type:"radar",
+      data:[{value:rd.vals, name:"مانده"}],
+      areaStyle:{}
+    }]
+  }, true);
+
+  // Waterfall: بدهی گذشته + هزینه جاری - پرداختی
+  let prevDebtSum = 0, currentCostSum = 0, paidSum = 0;
+  for(const title of Object.keys(state.classes)){
+    const [g, sex, stream] = title.split("-");
+    const months_map = state.classes[title] || {};
+    for(const [m, students] of Object.entries(months_map)){
+      if(monthName && m!==monthName) continue;
+      for(const stu of (students||[])){
+        const totals = compute_student_totals(g, sex, stream, stu);
+        prevDebtSum += to_int(stu.prev_debt||0);
+        currentCostSum += totals.current_cost;
+        paidSum += to_int(stu.paid||0);
+      }
+    }
+  }
+  const remain = (prevDebtSum + currentCostSum) - paidSum;
+
+  const water = ensureChart("chWater");
+  const labels = ["بدهی گذشته", "هزینه جاری", "پرداختی", "مانده"];
+  const step1 = prevDebtSum;
+  const step2 = currentCostSum;
+  const step3 = -paidSum;
+  const final = remain;
+
+  const offsets = [0, step1, step1+step2, step1+step2+step3];
+  const vals = [step1, step2, step3, final];
+
+  water.setOption({
+    backgroundColor:bg,
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{trigger:"axis", axisPointer:{type:"shadow"}, formatter:(items)=>{
+      const it = items[items.length-1];
+      return `${it.name}<br/>${format_int(it.value)} تومان`;
+    }},
+    grid:{left:10,right:10,top:20,bottom:40,containLabel:true},
+    xAxis:{type:"category", data:labels, axisLabel:{color:muted}},
+    yAxis:{type:"value", axisLabel:{color:muted}},
+    series:[
+      {
+        type:"bar",
+        stack:"w",
+        itemStyle:{color:"transparent"},
+        data:[0, offsets[1], offsets[2], 0],
+        emphasis:{disabled:true}
+      },
+      {
+        type:"bar",
+        stack:"w",
+        data:[vals[0], vals[1], vals[2], vals[3]],
+        itemStyle:{
+          borderRadius:[10,10,0,0],
+          borderColor:"rgba(255,255,255,.10)",
+          borderWidth:1
+        }
+      }
+    ]
+  }, true);
+
+  requestAnimationFrame(()=> Object.values(charts).forEach(ch=>{ try{ch.resize();}catch{}}));
+}
+
+/* =========================
+   Workdesk
+========================= */
+function renderWorkdesk(){
+  const inp = document.getElementById("workdeskThreshold");
+  inp.value = format_int(state.appearance.debt_highlight_threshold || 0);
+
+  const thr = to_int(inp.value);
+  const rows = [];
+
+  for(const title of Object.keys(state.classes)){
+    const parts = title.split("-");
+    if(parts.length!==3) continue;
+    const [grade, gender, stream] = parts;
+    const months_map = state.classes[title] || {};
+    for(const [month, students] of Object.entries(months_map)){
+      for(const stu of (students||[])){
+        const totals = compute_student_totals(grade, gender, stream, stu);
+        const remain = totals.remain;
+        if(remain <= 0) continue;
+        if(thr>0 && remain < thr) continue;
+        rows.push({
+          name: stu.full_name || "",
+          code: stu.candidate_no || "",
+          classTitle: title,
+          month,
+          paid: to_int(stu.paid||0),
+          totalDebt: totals.total_debt,
+          remain
+        });
+      }
+    }
+  }
+  rows.sort((a,b)=>b.remain-a.remain);
+
+  const tbody = document.querySelector("#tblWorkdesk tbody");
+  tbody.innerHTML = "";
+  for(const r of rows){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="tdR">${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.code)}</td>
+      <td>${escapeHtml(r.classTitle)}</td>
+      <td>${escapeHtml(r.month)}</td>
+      <td>${format_int(r.paid)}</td>
+      <td>${format_int(r.totalDebt)}</td>
+      <td class="computed">${format_int(r.remain)}</td>
+    `;
+    tr.ondblclick = ()=> openStudentInClasses(r.classTitle, r.month, only_digits(r.code));
+    tbody.appendChild(tr);
+  }
+}
+
+/* =========================
+   Classes page
+========================= */
+const CLS_COMMON_HEADERS = ["باقی مانده","پرداختی","مجموع بدهی ها","هزینه ماه جاری","مجموع جلسات"];
+const CLS_TAIL_HEADERS = ["بدهی قبلی","شماره داوطلبی","نام و نام خانوادگی"];
+
+let clsCurrent = {title:null, month:null, students:[], subjects:[]};
+let clsSelectedRow = -1;
+
+function ensureMonthData(title, month){
+  state.classes[title] = state.classes[title] || {};
+  const month_map = state.classes[title];
+
+  if(month_map[month] === undefined){
+    const idx = PERSIAN_MONTHS.indexOf(month);
+    if(idx>0){
+      const prev = PERSIAN_MONTHS[idx-1];
+      const prev_students = month_map[prev] || [];
+      month_map[month] = prev_students.map(s=> cloneStudentForNewMonth(s, title));
+    }else{
+      month_map[month] = [];
+    }
+    setDirty();
+  }
+  return month_map[month];
+}
+
+function cloneStudentForNewMonth(prevStu, title){
+  const parts = title.split("-");
+  const [grade, gender, stream] = parts.length===3 ? parts : ["","",""];
+  const totalsPrev = compute_student_totals(grade, gender, stream, prevStu);
+  const remainPrev = totalsPrev.remain;
+
+  const subjects = getSubjects(stream);
+  const sessions = {};
+  subjects.forEach(s=> sessions[s]=0);
+
+  return {
+    candidate_no: prevStu.candidate_no || "",
+    full_name: prevStu.full_name || "",
+    prev_debt: remainPrev,
+    exam: 0,
+    paid: 0,
+    sessions
+  };
+}
+
+function createEmptyStudent(subjects){
+  const sessions = {};
+  subjects.forEach(s=> sessions[s]=0);
+  return {candidate_no:"", full_name:"", prev_debt:0, exam:0, paid:0, sessions};
+}
+
+function renderClasses(){
+  const g = document.getElementById("clsGrade").value;
+  const sex = document.getElementById("clsGender").value;
+  const stream = document.getElementById("clsStream").value;
+  const month = document.getElementById("clsMonth").value;
+
+  const title = classTitle(g,sex,stream);
+  const subjects = getSubjects(stream);
+
+  clsCurrent.title = title;
+  clsCurrent.month = month;
+  clsCurrent.subjects = subjects;
+  clsCurrent.students = ensureMonthData(title, month);
+
+  document.getElementById("clsTitle").textContent = `کلاس ${title} — ماه ${month}`;
+
+  const headers = [...CLS_COMMON_HEADERS, ...subjects, ...CLS_TAIL_HEADERS];
+  const headTr = document.getElementById("clsHead");
+  headTr.innerHTML = "";
+  for(const h of headers){
+    const th = document.createElement("th");
+    th.textContent = h;
+    headTr.appendChild(th);
+  }
+
+  const tbody = document.getElementById("clsBody");
+  tbody.innerHTML = "";
+  clsSelectedRow = -1;
+
+  for(let i=0;i<clsCurrent.students.length;i++){
+    const stu = clsCurrent.students[i];
+    const totals = compute_student_totals(g,sex,stream,stu);
+    const tr = document.createElement("tr");
+
+    const enable = !!state.appearance.debt_highlight_enable;
+    const thr = to_int(state.appearance.debt_highlight_threshold||0);
+    if(enable && thr>0 && totals.remain>0 && totals.remain>=thr){
+      tr.classList.add("dangerRow");
+    }
+
+    tr.onclick = ()=> { clsSelectedRow = i; };
+
+    tr.appendChild(tdComputed(format_int(totals.remain)));
+    tr.appendChild(tdInputNumber(stu, "paid", i, true, true, (v)=>{
+      stu.paid = v;
+      refreshClassRow(i);
+    }));
+    tr.appendChild(tdComputed(format_int(totals.total_debt)));
+    tr.appendChild(tdComputed(format_int(totals.current_cost)));
+    tr.appendChild(tdComputed(format_int(totals.total_sessions)));
+
+    for(const subj of subjects){
+      tr.appendChild(tdSessionInput(stu, subj, i, ()=>{
+        refreshClassRow(i);
+      }));
+    }
+
+    tr.appendChild(tdInputNumber(stu, "prev_debt", i, true, true, (v)=>{
+      stu.prev_debt = v;
+      refreshClassRow(i);
+    }));
+
+    tr.appendChild(tdInputText(stu, "candidate_no", i, false, ()=>{
+      refreshClassRow(i);
+    }));
+
+    tr.appendChild(tdInputText(stu, "full_name", i, true, ()=>{
+      refreshClassRow(i);
+    }));
+
+    tbody.appendChild(tr);
+  }
+
+  updateClassSummaries();
+}
+
+function tdComputed(text){
+  const td = document.createElement("td");
+  td.className = "computed";
+  td.textContent = text;
+  return td;
+}
+function tdInputNumber(obj, key, rowIndex, center=true, format=true, onCommit){
+  const td = document.createElement("td");
+  const inp = document.createElement("input");
+  inp.className = "inpCell";
+  inp.inputMode = "numeric";
+  inp.value = format ? format_int(to_int(obj[key]||0)) : String(to_int(obj[key]||0));
+  inp.onfocus = ()=> { inp.select(); };
+  inp.onchange = ()=>{
+    const v = to_int(inp.value);
+    inp.value = format ? format_int(v) : String(v);
+    obj[key] = v;
+    setDirty();
+    onCommit && onCommit(v);
+  };
+  td.appendChild(inp);
+  return td;
+}
+function tdInputText(obj, key, rowIndex, rtl=true, onCommit){
+  const td = document.createElement("td");
+  const inp = document.createElement("input");
+  inp.className = "inpCell " + (key==="full_name" ? "wide" : "mid");
+  inp.value = obj[key] || "";
+  inp.style.textAlign = rtl ? "right" : "center";
+  inp.onchange = ()=>{
+    obj[key] = inp.value;
+    setDirty();
+    onCommit && onCommit(inp.value);
+  };
+  td.appendChild(inp);
+  return td;
+}
+function tdSessionInput(stu, subj, rowIndex, onCommit){
+  const td = document.createElement("td");
+  const inp = document.createElement("input");
+  inp.className = "inpCell";
+  inp.inputMode = "numeric";
+  const sessions = stu.sessions || (stu.sessions={});
+  const val = to_int(sessions[subj] || 0);
+  inp.value = val ? String(val) : "";
+  inp.onfocus = ()=> inp.select();
+  inp.onchange = ()=>{
+    const v = to_int(inp.value);
+    inp.value = v ? String(v) : "";
+    sessions[subj] = v;
+    setDirty();
+    onCommit && onCommit();
+  };
+  td.appendChild(inp);
+  return td;
+}
+
+function refreshClassRow(i){
+  renderClasses();
+  updateDashboardIfAdmin();
+}
+
+function updateClassSummaries(){
+  if(session.role!=="admin"){
+    document.getElementById("clsSumDebt").style.display="none";
+    document.getElementById("clsSumPaid").style.display="none";
+    return;
+  }
+  document.getElementById("clsSumDebt").style.display="";
+  document.getElementById("clsSumPaid").style.display="";
+
+  const [g,sex,stream] = clsCurrent.title.split("-");
+  let totalPaid = 0, totalDebt = 0;
+
+  for(const stu of clsCurrent.students){
+    const totals = compute_student_totals(g,sex,stream,stu);
+    totalPaid += to_int(stu.paid||0);
+    totalDebt += totals.total_debt;
+  }
+  document.getElementById("clsSumPaid").textContent = `مجموع پرداختی‌ها: ${format_int(totalPaid)} تومان`;
+  document.getElementById("clsSumDebt").textContent = `مجموع بدهی‌ها: ${format_int(totalDebt)} تومان`;
+}
+
+function updateDashboardIfAdmin(){
+  if(session.role==="admin"){
+    if(document.getElementById("page-dashboard").classList.contains("active")){
+      renderDashboard();
+    }
+  }
+}
+
+/* Excel import/export (Classes) */
+function exportCurrentClassToXlsx(){
+  if(!clsCurrent.title || !clsCurrent.month) return;
+  const [g,sex,stream] = clsCurrent.title.split("-");
+  const subjects = clsCurrent.subjects;
+  const headers = [...CLS_COMMON_HEADERS, ...subjects, ...CLS_TAIL_HEADERS];
+
+  const rows = clsCurrent.students.map(stu=>{
+    const totals = compute_student_totals(g,sex,stream,stu);
+    const arr = [];
+    arr.push(totals.remain);
+    arr.push(to_int(stu.paid||0));
+    arr.push(totals.total_debt);
+    arr.push(totals.current_cost);
+    arr.push(totals.total_sessions);
+    for(const subj of subjects) arr.push(to_int((stu.sessions||{})[subj]||0));
+    arr.push(to_int(stu.prev_debt||0));
+    arr.push(stu.candidate_no||"");
+    arr.push(stu.full_name||"");
+    return arr;
+  });
+
+  const aoa = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "گزارش");
+  XLSX.writeFile(wb, `گزارش-${clsCurrent.title}-${clsCurrent.month}.xlsx`);
+}
+
+async function importClassFromXlsx(file){
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data, {type:"array"});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true});
+  if(!aoa.length) return;
+
+  const headers = aoa[0].map(x=> String(x||"").trim());
+  const idx = {};
+  headers.forEach((h,i)=>{ if(h) idx[h]=i; });
+
+  if(!idx["نام و نام خانوادگی"]){
+    alert("فرمت اکسل نامعتبر است. لطفاً از خروجی همین برنامه استفاده کنید.");
+    return;
+  }
+
+  const subjects = clsCurrent.subjects;
+  const newStudents = [];
+
+  for(let r=1;r<aoa.length;r++){
+    const row = aoa[r];
+    const fullName = row[idx["نام و نام خانوادگی"]] ?? "";
+    if(!String(fullName||"").trim()) continue;
+
+    const stu = createEmptyStudent(subjects);
+    stu.full_name = String(fullName);
+    if(idx["شماره داوطلبی"]!==undefined) stu.candidate_no = String(row[idx["شماره داوطلبی"]] ?? "");
+    if(idx["بدهی قبلی"]!==undefined) stu.prev_debt = to_int(row[idx["بدهی قبلی"]] ?? 0);
+    if(idx["پرداختی"]!==undefined) stu.paid = to_int(row[idx["پرداختی"]] ?? 0);
+
+    for(const subj of subjects){
+      if(idx[subj]!==undefined){
+        stu.sessions[subj] = to_int(row[idx[subj]] ?? 0);
+      }
+    }
+    newStudents.push(stu);
+  }
+
+  state.classes[clsCurrent.title][clsCurrent.month] = newStudents;
+  clsCurrent.students = newStudents;
+  setDirty();
+  renderClasses();
+  updateDashboardIfAdmin();
+}
+
+/* =========================
+   Exams
+========================= */
+const EXAM_HEADERS = [
+  "نام و نام خانوادگی","شماره داوطلبی","بدهی کل آزمون (تومان)",
+  "قسط اول","قسط دوم","قسط سوم","قسط چهارم","قسط پنجم",
+  "جمع پرداختی (محاسبه - تومان)","باقی مانده (محاسبه - تومان)"
+];
+
+let examSelectedRow = -1;
+
+function examRowTotals(d){
+  const total = to_int(d.total_debt||0);
+  let paid=0; for(let i=1;i<=5;i++) paid += to_int(d["inst"+i]||0);
+  const remain = total - paid;
+  return {paid, remain};
+}
+
+function renderExams(){
+  const head = document.getElementById("examHead");
+  head.innerHTML = "";
+  EXAM_HEADERS.forEach(h=>{
+    const th = document.createElement("th"); th.textContent = h; head.appendChild(th);
+  });
+
+  const body = document.getElementById("examBody");
+  body.innerHTML = "";
+  examSelectedRow = -1;
+
+  for(let i=0;i<state.exams.length;i++){
+    const d = state.exams[i];
+    const tr = document.createElement("tr");
+    tr.onclick = ()=> examSelectedRow=i;
+
+    tr.appendChild(tdExamText(d,"full_name", true));
+    tr.appendChild(tdExamText(d,"candidate_no", false));
+
+    tr.appendChild(tdExamNum(d,"total_debt", (v)=>{d.total_debt=v; setDirty(); renderExams();}));
+
+    for(let k=1;k<=5;k++){
+      const key = "inst"+k;
+      tr.appendChild(tdExamNum(d,key, (v)=>{d[key]=v; setDirty(); renderExams();}));
+    }
+
+    const {paid, remain} = examRowTotals(d);
+    tr.appendChild(tdComputed(format_int(paid)));
+    tr.appendChild(tdComputed(format_int(remain)));
+
+    body.appendChild(tr);
+  }
+
+  updateExamSummary();
+  renderExamChart();
+}
+
+function tdExamText(d, key, wide){
+  const td = document.createElement("td");
+  const inp = document.createElement("input");
+  inp.className = "inpCell " + (wide ? "wide" : "mid");
+  inp.value = d[key] || "";
+  inp.style.textAlign = wide ? "right" : "center";
+  inp.onchange = ()=>{ d[key]=inp.value; setDirty(); };
+  td.appendChild(inp);
+  return td;
+}
+function tdExamNum(d, key, onCommit){
+  const td = document.createElement("td");
+  const inp = document.createElement("input");
+  inp.className = "inpCell";
+  inp.inputMode="numeric";
+  inp.value = format_int(to_int(d[key]||0));
+  inp.onfocus = ()=> inp.select();
+  inp.onchange = ()=>{
+    const v = to_int(inp.value);
+    inp.value = format_int(v);
+    onCommit && onCommit(v);
+  };
+  td.appendChild(inp);
+  return td;
+}
+
+function updateExamSummary(){
+  if(session.role!=="admin"){
+    document.getElementById("examSumDebt").style.display="none";
+    document.getElementById("examSumPaid").style.display="none";
+    return;
+  }
+  document.getElementById("examSumDebt").style.display="";
+  document.getElementById("examSumPaid").style.display="";
+
+  const [totalDebt, totalPaid] = compute_exam_aggregate();
+  document.getElementById("examSumDebt").textContent = `مجموع بدهی آزمون‌ها: ${format_int(totalDebt)} تومان`;
+  document.getElementById("examSumPaid").textContent = `مجموع پرداختی آزمون‌ها: ${format_int(totalPaid)} تومان`;
+}
+
+function renderExamChart(){
+  const [totalDebt, totalPaid] = compute_exam_aggregate();
+  const remain = totalDebt - totalPaid;
+
+  if(!charts.examDonut){
+    charts.examDonut = echarts.init(document.getElementById("chExamDonut"));
+  }
+  const textColor = getComputedStyle(document.body).getPropertyValue("--text").trim();
+  const muted = getComputedStyle(document.body).getPropertyValue("--muted").trim();
+
+  charts.examDonut.setOption({
+    backgroundColor:"transparent",
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{trigger:"item"},
+    legend:{bottom:0, textStyle:{color:muted}},
+    series:[{
+      type:"pie",
+      radius:["55%","78%"],
+      itemStyle:{borderRadius:12, borderColor:"rgba(255,255,255,.10)", borderWidth:1},
+      label:{color:textColor},
+      data: (totalDebt>0 || totalPaid>0) ? [
+        {value: totalPaid, name:"پرداخت‌شده"},
+        {value: Math.max(remain,0), name:"باقی‌مانده"},
+      ] : [{value:1, name:"بدون داده"}]
+    }]
+  }, true);
+
+  requestAnimationFrame(()=>{ try{charts.examDonut.resize();}catch{} });
+}
+
+/* Excel import/export (Exams) */
+function exportExamsToXlsx(){
+  const aoa = [EXAM_HEADERS];
+  for(const d of state.exams){
+    const {paid, remain} = examRowTotals(d);
+    aoa.push([
+      d.full_name||"", d.candidate_no||"", to_int(d.total_debt||0),
+      to_int(d.inst1||0), to_int(d.inst2||0), to_int(d.inst3||0), to_int(d.inst4||0), to_int(d.inst5||0),
+      paid, remain
+    ]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "آزمون‌ها");
+  XLSX.writeFile(wb, `گزارش-آزمون‌ها.xlsx`);
+}
+async function importExamsFromXlsx(file){
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data, {type:"array"});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true});
+  if(!aoa.length) return;
+
+  const headers = aoa[0].map(x=> String(x||"").trim());
+  const idx = {}; headers.forEach((h,i)=>{ if(h) idx[h]=i; });
+
+  if(idx["نام و نام خانوادگی"]===undefined && idx["شماره داوطلبی"]===undefined){
+    alert("فرمت اکسل آزمون‌ها نامعتبر است.");
+    return;
+  }
+
+  const rows = [];
+  for(let r=1;r<aoa.length;r++){
+    const row = aoa[r];
+    const full = row[idx["نام و نام خانوادگی"]] ?? "";
+    const code = row[idx["شماره داوطلبی"]] ?? "";
+    if(!String(full||"").trim() && !String(code||"").trim()) continue;
+
+    const d = {full_name:String(full||""), candidate_no:String(code||""), total_debt:0, inst1:0,inst2:0,inst3:0,inst4:0,inst5:0};
+    if(idx["بدهی کل آزمون (تومان)"]!==undefined) d.total_debt = to_int(row[idx["بدهی کل آزمون (تومان)"]] ?? 0);
+    const cols = ["قسط اول","قسط دوم","قسط سوم","قسط چهارم","قسط پنجم"];
+    cols.forEach((c,i)=>{
+      if(idx[c]!==undefined) d["inst"+(i+1)] = to_int(row[idx[c]] ?? 0);
+    });
+    rows.push(d);
+  }
+  state.exams = rows;
+  setDirty();
+  renderExams();
+  updateDashboardIfAdmin();
+}
+
+/* =========================
+   Tariffs
+========================= */
+function renderTariffs(){
+  const tbody = document.querySelector("#tblTariffs tbody");
+  tbody.innerHTML = "";
+
+  for(const g of GRADES){
+    for(const sex of GENDERS){
+      for(const stream of Object.keys(STREAMS_SUBJECTS)){
+        for(const subj of [...STREAMS_SUBJECTS[stream], EXTRA_SUBJECT]){
+          const tr = document.createElement("tr");
+          const k = keyTariff(g,sex,stream,subj);
+          const price = to_int(state.tariffs[k]||0);
+
+          tr.innerHTML = `
+            <td>${g}</td>
+            <td>${sex}</td>
+            <td>${stream}</td>
+            <td>${subj}</td>
+            <td></td>
+          `;
+
+          const td = tr.children[4];
+          const inp = document.createElement("input");
+          inp.className = "inpCell";
+          inp.inputMode="numeric";
+          inp.value = format_int(price);
+          inp.onfocus = ()=>inp.select();
+          inp.onchange = ()=>{
+            const v = to_int(inp.value);
+            inp.value = format_int(v);
+            state.tariffs[k] = v;
+            setDirty();
+            if(document.getElementById("page-classes").classList.contains("active")) renderClasses();
+            updateDashboardIfAdmin();
+          };
+          td.appendChild(inp);
+          tbody.appendChild(tr);
+        }
+      }
+    }
+  }
+}
+
+/* Export tariffs */
+function exportTariffsXlsx(){
+  const headers = ["پایه","جنسیت","رشته","درس","هزینه هر جلسه"];
+  const aoa = [headers];
+  for(const g of GRADES){
+    for(const sex of GENDERS){
+      for(const stream of Object.keys(STREAMS_SUBJECTS)){
+        for(const subj of [...STREAMS_SUBJECTS[stream], EXTRA_SUBJECT]){
+          const k = keyTariff(g,sex,stream,subj);
+          aoa.push([g,sex,stream,subj,to_int(state.tariffs[k]||0)]);
+        }
+      }
+    }
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تعرفه‌ها");
+  XLSX.writeFile(wb, `تعرفه‌ها.xlsx`);
+}
+
+/* =========================
+   Teachers
+========================= */
+const TEACH_HEADERS = ["نام معلم","ساعت تدریس","نرخ هر ساعت (تومان)","پاداش (تومان)","کسورات (تومان)","پرداختی (تومان)","جمع حقوق (محاسبه)","باقی‌مانده (محاسبه)","توضیحات"];
+let teacherSelectedRow = -1;
+
+function tchEmpty(){
+  return {name:"", hours:0, rate:0, bonus:0, deduct:0, paid:0, note:""};
+}
+function tchTotalRemain(d){
+  const hours=to_int(d.hours||0), rate=to_int(d.rate||0), bonus=to_int(d.bonus||0), deduct=to_int(d.deduct||0), paid=to_int(d.paid||0);
+  const total = hours*rate + bonus - deduct;
+  const remain = total - paid;
+  return {total, remain};
+}
+
+function renderTeachers(){
+  const month = document.getElementById("tchMonth").value;
+  state.teachers[month] = Array.isArray(state.teachers[month]) ? state.teachers[month] : [];
+  const rows = state.teachers[month];
+
+  const head = document.getElementById("tchHead");
+  head.innerHTML="";
+  TEACH_HEADERS.forEach(h=>{ const th=document.createElement("th"); th.textContent=h; head.appendChild(th); });
+
+  const body = document.getElementById("tchBody");
+  body.innerHTML="";
+  teacherSelectedRow = -1;
+
+  for(let i=0;i<rows.length;i++){
+    const d = rows[i];
+    const {total, remain} = tchTotalRemain(d);
+
+    const tr = document.createElement("tr");
+    if(remain>0) tr.classList.add("dangerRow");
+    tr.onclick = ()=> teacherSelectedRow=i;
+
+    tr.appendChild(tdTchText(d,"name", true, ()=>{setDirty(); renderTeachers();}));
+    tr.appendChild(tdTchNum(d,"hours", ()=>{setDirty(); renderTeachers();}));
+    tr.appendChild(tdTchNum(d,"rate", ()=>{setDirty(); renderTeachers();}));
+    tr.appendChild(tdTchNum(d,"bonus", ()=>{setDirty(); renderTeachers();}));
+    tr.appendChild(tdTchNum(d,"deduct", ()=>{setDirty(); renderTeachers();}));
+    tr.appendChild(tdTchNum(d,"paid", ()=>{setDirty(); renderTeachers();}));
+    tr.appendChild(tdComputed(format_int(total)));
+    tr.appendChild(tdComputed(format_int(remain)));
+    tr.appendChild(tdTchText(d,"note", true, ()=>{setDirty();}));
+
+    body.appendChild(tr);
+  }
+
+  renderTeacherChart(month, rows);
+}
+
+function tdTchText(d,key,wide,onCommit){
+  const td=document.createElement("td");
+  const inp=document.createElement("input");
+  inp.className="inpCell "+(wide?"wide":"mid");
+  inp.value=d[key]||"";
+  inp.style.textAlign="right";
+  inp.onchange=()=>{ d[key]=inp.value; onCommit&&onCommit(); };
+  td.appendChild(inp);
+  return td;
+}
+function tdTchNum(d,key,onCommit){
+  const td=document.createElement("td");
+  const inp=document.createElement("input");
+  inp.className="inpCell";
+  inp.inputMode="numeric";
+  inp.value=format_int(to_int(d[key]||0));
+  inp.onfocus=()=>inp.select();
+  inp.onchange=()=>{ d[key]=to_int(inp.value); inp.value=format_int(d[key]); onCommit&&onCommit(); };
+  td.appendChild(inp);
+  return td;
+}
+
+function renderTeacherChart(month, rows){
+  if(!charts.teacherBar){
+    charts.teacherBar = echarts.init(document.getElementById("chTeacherBar"));
+  }
+  const names = rows.map(r=> r.name || "—").slice(0,12);
+  const remains = rows.slice(0,12).map(r=> tchTotalRemain(r).remain);
+
+  const textColor = getComputedStyle(document.body).getPropertyValue("--text").trim();
+  const muted = getComputedStyle(document.body).getPropertyValue("--muted").trim();
+
+  charts.teacherBar.setOption({
+    backgroundColor:"transparent",
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    grid:{left:10,right:10,top:20,bottom:40,containLabel:true},
+    xAxis:{type:"category", data:names, axisLabel:{color:muted, rotate:20}},
+    yAxis:{type:"value", axisLabel:{color:muted}},
+    tooltip:{trigger:"axis"},
+    series:[{type:"bar", data:remains, itemStyle:{borderRadius:[10,10,0,0]}}]
+  }, true);
+
+  requestAnimationFrame(()=>{ try{charts.teacherBar.resize();}catch{} });
+}
+
+function exportTeachersMonthXlsx(){
+  const month = document.getElementById("tchMonth").value;
+  const rows = state.teachers[month] || [];
+  const aoa = [TEACH_HEADERS];
+  for(const d of rows){
+    const {total, remain} = tchTotalRemain(d);
+    aoa.push([
+      d.name||"", to_int(d.hours||0), to_int(d.rate||0), to_int(d.bonus||0), to_int(d.deduct||0), to_int(d.paid||0),
+      total, remain, d.note||""
+    ]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "معلمان");
+  XLSX.writeFile(wb, `گزارش-معلمان-${month}.xlsx`);
+}
+
+/* =========================
+   Search
+========================= */
+let lastSearchMeta = [];
+
+function renderSearchResults(rows){
+  const tbody = document.querySelector("#tblSearch tbody");
+  tbody.innerHTML = "";
+  lastSearchMeta = [];
+
+  for(const r of rows){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="tdR">${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.code)}</td>
+      <td>${escapeHtml(r.classTitle)}</td>
+      <td>${escapeHtml(r.month)}</td>
+      <td>${format_int(r.paid)}</td>
+      <td>${format_int(r.totalDebt)}</td>
+      <td class="computed">${format_int(r.remain)}</td>
+    `;
+    tr.ondblclick = ()=> openStudentInClasses(r.classTitle, r.month, r.codeDigits);
+    tbody.appendChild(tr);
+
+    lastSearchMeta.push(r);
+  }
+}
+
+function runSearch(){
+  const qRaw = document.getElementById("searchQuery").value.trim();
+  if(!qRaw){ alert("لطفاً نام یا کد را وارد کنید."); return; }
+
+  const digits = only_digits(qRaw);
+  const results = [];
+
+  for(const title of Object.keys(state.classes)){
+    const parts = title.split("-");
+    if(parts.length!==3) continue;
+    const [grade, gender, stream] = parts;
+    const months_map = state.classes[title] || {};
+    for(const [month, students] of Object.entries(months_map)){
+      for(const stu of (students||[])){
+        const codeDigits = only_digits(stu.candidate_no||"");
+        const nameNorm = norm_text_simple(stu.full_name||"");
+        let ok = false;
+        if(digits){
+          ok = codeDigits && codeDigits === digits;
+        }else{
+          const q = norm_text_simple(qRaw);
+          ok = q && nameNorm.includes(q);
+        }
+        if(!ok) continue;
+
+        const totals = compute_student_totals(grade, gender, stream, stu);
+        results.push({
+          name: stu.full_name||"",
+          code: stu.candidate_no||"",
+          codeDigits,
+          classTitle: title,
+          month,
+          paid: to_int(stu.paid||0),
+          totalDebt: totals.total_debt,
+          remain: totals.remain
+        });
+      }
+    }
+  }
+
+  renderSearchResults(results);
+  if(!results.length) alert("هیچ نتیجه‌ای یافت نشد.");
+}
+
+function openStudentInClasses(title, month, codeDigits){
+  const parts = title.split("-");
+  if(parts.length!==3) return;
+  const [g, sex, stream] = parts;
+
+  document.getElementById("clsGrade").value = g;
+  document.getElementById("clsGender").value = sex;
+  document.getElementById("clsStream").value = stream;
+  document.getElementById("clsMonth").value = month;
+
+  showPage("classes");
+
+  setTimeout(()=>{
+    const rows = clsCurrent.students || [];
+    const idx = rows.findIndex(s=> only_digits(s.candidate_no||"") === codeDigits);
+    if(idx>=0){
+      const tr = document.querySelectorAll("#clsBody tr")[idx];
+      if(tr) tr.scrollIntoView({behavior:"smooth", block:"center"});
+    }
+  }, 60);
+}
+
+/* =========================
+   Financial Notes
+========================= */
+function addFinancialNote(){
+  const type = document.getElementById("noteType").value;
+  const amount = to_int(document.getElementById("noteAmount").value);
+  const code = only_digits(document.getElementById("noteCode").value);
+  const month = document.getElementById("noteMonth").value;
+  const desc = document.getElementById("noteDesc").value.trim();
+
+  if(!amount || amount<=0){ alert("مبلغ معتبر وارد کنید."); return; }
+  if(!code){ alert("کد داوطلب را درست وارد کنید."); return; }
+
+  const note = {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+    createdAt: nowFa(),
+    type,
+    amount,
+    candidate_no: code,
+    month: (month==="_auto" ? "" : month),
+    desc,
+    status: "pending",
+    appliedAt: "",
+    appliedMeta: ""
+  };
+
+  state.financialNotes.unshift(note);
+  setDirty();
+  renderNotes();
+
+  document.getElementById("noteAmount").value="";
+  document.getElementById("noteCode").value="";
+  document.getElementById("noteDesc").value="";
+}
+
+function findStudentByCode(codeDigits){
+  for(const title of Object.keys(state.classes)){
+    const months_map = state.classes[title] || {};
+    for(const [month, students] of Object.entries(months_map)){
+      for(const stu of (students||[])){
+        const cn = only_digits(stu.candidate_no||"");
+        if(cn && cn===codeDigits) return {title, month, stu};
+      }
+    }
+  }
+  return null;
+}
+function findStudentByCodeAndMonth(codeDigits, monthName){
+  for(const title of Object.keys(state.classes)){
+    const months_map = state.classes[title] || {};
+    const students = months_map[monthName] || [];
+    for(const stu of students){
+      const cn = only_digits(stu.candidate_no||"");
+      if(cn && cn===codeDigits) return {title, month:monthName, stu};
+    }
+  }
+  return null;
+}
+function findExamByCode(codeDigits){
+  return state.exams.find(acc => only_digits(acc.candidate_no||"") === codeDigits) || null;
+}
+
+function applyNote(noteId){
+  const note = state.financialNotes.find(n=>n.id===noteId);
+  if(!note || note.status!=="pending") return;
+
+  const code = note.candidate_no;
+  const amount = to_int(note.amount);
+
+  if(note.type==="tuition"){
+    let res = null;
+    if(note.month){
+      res = findStudentByCodeAndMonth(code, note.month);
+    }
+    if(!res){
+      res = findStudentByCode(code);
+    }
+    if(!res){
+      alert("دانش‌آموز با این کد پیدا نشد. ابتدا در کلاس‌ها ثبتش کنید.");
+      return;
+    }
+    res.stu.paid = to_int(res.stu.paid||0) + amount;
+
+    note.status = "applied";
+    note.appliedAt = nowFa();
+    note.appliedMeta = `Applied to Tuition: ${res.title} / ${res.month}`;
+    setDirty();
+
+    if(document.getElementById("page-classes").classList.contains("active")) renderClasses();
+    updateDashboardIfAdmin();
+    renderNotes();
+    alert("یادداشت مالی روی شهریه اعمال شد ✅");
+    return;
+  }
+
+  if(note.type==="exam"){
+    const acc = findExamByCode(code);
+    if(!acc){
+      alert("داوطلب در بخش آزمون‌ها پیدا نشد. ابتدا در آزمون‌ها ثبتش کنید.");
+      return;
+    }
+
+    let remaining = amount;
+    for(let i=1;i<=5;i++){
+      if(remaining<=0) break;
+      const k = "inst"+i;
+      const cur = to_int(acc[k]||0);
+      acc[k] = cur + remaining;
+      remaining = 0;
+    }
+
+    note.status = "applied";
+    note.appliedAt = nowFa();
+    note.appliedMeta = "Applied to Exam installments (auto)";
+    setDirty();
+
+    if(document.getElementById("page-exams").classList.contains("active")) renderExams();
+    updateDashboardIfAdmin();
+    renderNotes();
+    alert("یادداشت مالی روی آزمون اعمال شد ✅");
+    return;
+  }
+}
+
+function deleteNote(noteId){
+  const idx = state.financialNotes.findIndex(n=>n.id===noteId);
+  if(idx<0) return;
+  if(!confirm("حذف شود؟")) return;
+  state.financialNotes.splice(idx,1);
+  setDirty();
+  renderNotes();
+}
+
+function renderNotes(){
+  const tbody = document.querySelector("#tblNotes tbody");
+  tbody.innerHTML = "";
+
+  for(const n of state.financialNotes){
+    const tr = document.createElement("tr");
+    const typeFa = (n.type==="tuition") ? "شهریه" : "آزمون";
+    const statusFa = (n.status==="pending") ? "در انتظار" : "اعمال شد";
+    const month = n.month ? n.month : "—";
+
+    tr.innerHTML = `
+      <td>${escapeHtml(n.createdAt||"")}</td>
+      <td>${typeFa}</td>
+      <td class="computed">${format_int(n.amount)} </td>
+      <td>${escapeHtml(n.candidate_no||"")}</td>
+      <td>${escapeHtml(month)}</td>
+      <td class="tdR">${escapeHtml(n.desc||"")}</td>
+      <td>${statusFa}</td>
+      <td></td>
+    `;
+
+    const ops = tr.children[7];
+    if(n.status==="pending"){
+      const bApply = document.createElement("button");
+      bApply.className = "btn primary";
+      bApply.textContent = "اعمال";
+      bApply.onclick = ()=> applyNote(n.id);
+      ops.appendChild(bApply);
+    }else{
+      const meta = document.createElement("div");
+      meta.className = "hint";
+      meta.textContent = n.appliedMeta ? `(${n.appliedMeta})` : "";
+      ops.appendChild(meta);
+    }
+
+    const bDel = document.createElement("button");
+    bDel.className = "btn danger";
+    bDel.style.marginRight = "8px";
+    bDel.textContent = "حذف";
+    bDel.onclick = ()=> deleteNote(n.id);
+    ops.appendChild(bDel);
+
+    tbody.appendChild(tr);
+  }
+
+  renderNoteCharts();
+}
+
+function renderNoteCharts(){
+  const textColor = getComputedStyle(document.body).getPropertyValue("--text").trim();
+  const muted = getComputedStyle(document.body).getPropertyValue("--muted").trim();
+
+  const pending = state.financialNotes.filter(n=>n.status==="pending").length;
+  const applied = state.financialNotes.filter(n=>n.status==="applied").length;
+
+  if(!charts.notePie){
+    charts.notePie = echarts.init(document.getElementById("chNotePie"));
+  }
+  charts.notePie.setOption({
+    backgroundColor:"transparent",
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    tooltip:{trigger:"item"},
+    legend:{bottom:0, textStyle:{color:muted}},
+    series:[{
+      type:"pie",
+      radius:["52%","80%"],
+      itemStyle:{borderRadius:12, borderColor:"rgba(255,255,255,.10)", borderWidth:1},
+      label:{color:textColor},
+      data: (pending+applied>0) ? [
+        {value: pending, name:"در انتظار"},
+        {value: applied, name:"اعمال شد"},
+      ] : [{value:1, name:"بدون داده"}]
+    }]
+  }, true);
+
+  if(!charts.noteLine){
+    charts.noteLine = echarts.init(document.getElementById("chNoteLine"));
+  }
+  const last = [...state.financialNotes].slice(0,20).reverse();
+  const x = last.map(n=> (n.createdAt||"").slice(5,16));
+  const y = last.map(n=> to_int(n.amount||0));
+
+  charts.noteLine.setOption({
+    backgroundColor:"transparent",
+    textStyle:{color:textColor, fontFamily: state.appearance.font_family || "Vazirmatn"},
+    grid:{left:10,right:10,top:20,bottom:35,containLabel:true},
+    tooltip:{trigger:"axis"},
+    xAxis:{type:"category", data:x, axisLabel:{color:muted}},
+    yAxis:{type:"value", axisLabel:{color:muted}},
+    series:[{type:"line", smooth:true, data:y, areaStyle:{}}],
+  }, true);
+
+  requestAnimationFrame(()=>{
+    try{charts.notePie.resize(); charts.noteLine.resize();}catch{}
+  });
+}
+
+/* =========================
+   Backup/Restore
+========================= */
+function downloadJsonBackup(){
+  saveData();
+  const raw = localStorage.getItem(STORAGE_KEY) || "{}";
+  const blob = new Blob([raw], {type:"application/json;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `academy_backup_${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function restoreFromJson(file){
+  const text = await file.text();
+  try{
+    const obj = JSON.parse(text);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    state = {appearance:{...APPEARANCE_DEFAULTS}, tariffs:{}, classes:{}, teachers:{}, exams:[], financialNotes:[]};
+    loadData();
+    applyAppearance();
+    setDirty();
+    await saveAll(false);
+    const active = document.querySelector(".navbtn.active")?.dataset.page || (session.role==="admin"?"dashboard":"classes");
+    showPage(active);
+    alert("بازگردانی انجام شد ✅");
+  }catch(e){
+    alert("فایل JSON نامعتبر است.");
+  }
+}
+
+/* =========================
+   Export: Summary all to Excel
+========================= */
+function exportAllSummaryXlsx(){
+  const headers = ["کلاس","ماه","تعداد دانش‌آموز","جمع پرداختی","جمع کل بدهی","جمع باقی‌مانده مثبت"];
+  const aoa = [headers];
+
+  for(const title of Object.keys(state.classes)){
+    const parts = title.split("-");
+    if(parts.length!==3) continue;
+    const [g, sex, stream] = parts;
+    const months_map = state.classes[title] || {};
+    for(const [month, students] of Object.entries(months_map)){
+      if(!students || !students.length) continue;
+      const studentCount = students.filter(s=> (s.full_name||"").trim()).length;
+
+      let totalPaid=0, totalDebt=0, totalRemainPos=0;
+      for(const stu of students){
+        const totals = compute_student_totals(g,sex,stream,stu);
+        totalPaid += to_int(stu.paid||0);
+        totalDebt += totals.total_debt;
+        if(totals.remain>0) totalRemainPos += totals.remain;
+      }
+      aoa.push([title, month, studentCount, totalPaid, totalDebt, totalRemainPos]);
+    }
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "خلاصه کل");
+  XLSX.writeFile(wb, `گزارش-کل.xlsx`);
+}
+
+/* =========================
+   Small helpers
+========================= */
+function escapeHtml(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* =========================
+   Init UI (fill selects, events)
+========================= */
+function initSelects(){
+  const dashScope = document.getElementById("dashScope");
+  dashScope.innerHTML = `<option value="_all">کل سال</option>` + PERSIAN_MONTHS.map(m=>`<option value="${m}">${m}</option>`).join("");
+
+  const noteMonth = document.getElementById("noteMonth");
+  noteMonth.innerHTML = `<option value="_auto">خودکار</option>` + PERSIAN_MONTHS.map(m=>`<option value="${m}">${m}</option>`).join("");
+
+  fillSelect("clsGrade", GRADES);
+  fillSelect("clsGender", GENDERS);
+  fillSelect("clsStream", Object.keys(STREAMS_SUBJECTS));
+  fillSelect("clsMonth", PERSIAN_MONTHS);
+
+  fillSelect("tchMonth", PERSIAN_MONTHS);
+
+  document.getElementById("clsGrade").value = GRADES[0];
+  document.getElementById("clsGender").value = GENDERS[0];
+  document.getElementById("clsStream").value = Object.keys(STREAMS_SUBJECTS)[0];
+  document.getElementById("clsMonth").value = PERSIAN_MONTHS[0];
+
+  document.getElementById("tchMonth").value = PERSIAN_MONTHS[0];
+}
+
+function fillSelect(id, items){
+  const el = document.getElementById(id);
+  el.innerHTML = items.map(x=>`<option value="${x}">${x}</option>`).join("");
+}
+
+function initEvents(){
+  document.querySelectorAll(".navbtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const page = btn.dataset.page;
+      showPage(page);
+    });
+  });
+
+  document.getElementById("btnToggleSide").onclick = ()=>{
+    const sb = document.getElementById("sidebar");
+    sb.classList.toggle("collapsed");
+    document.getElementById("btnToggleSide").textContent = sb.classList.contains("collapsed") ? "⮞" : "⮜";
+    setTimeout(()=>Object.values(charts).forEach(ch=>{try{ch.resize();}catch{}}), 220);
+  };
+
+  document.getElementById("btnSave").onclick = async ()=>{ await saveAll(true); };
+  document.getElementById("btnBackup").onclick = downloadJsonBackup;
+
+  document.getElementById("btnCloud").onclick = ()=>{ openCloudModal(); };
+  document.getElementById("btnCloudPull").onclick = async ()=>{
+    if(!isCloudConfigured()){
+      alert("اول «اتصال به اکسل آنلاین ☁️» را تنظیم کن.");
+      return;
+    }
+    const ok = confirm("دریافت از اکسل آنلاین انجام شود؟\n\nاگر دادهٔ اکسل جدیدتر باشد، دادهٔ محلی جایگزین می‌شود.");
+    if(!ok) return;
+    try{ await pullFromCloud(true); }
+    catch(e){ alert("دریافت انجام نشد. لینک/اینترنت را بررسی کن."); }
+  };
+
+  document.getElementById("fileRestore").addEventListener("change", async (e)=>{
+    const file = e.target.files?.[0];
+    e.target.value="";
+    if(!file) return;
+    await restoreFromJson(file);
+  });
+
+  document.getElementById("btnCloseCloud").onclick = closeCloudModal;
+  document.getElementById("btnSaveCloud").onclick = saveCloudCfgFromModal;
+  document.getElementById("btnTestCloud").onclick = testCloudConnection;
+
+document.getElementById("btnAppearance").onclick = ()=>{ openAppearanceModal(); };
+  document.getElementById("btnCloseAppearance").onclick = closeAppearanceModal;
+  document.getElementById("btnSaveAppearance").onclick = saveAppearanceFromModal;
+
+  document.getElementById("btnLogout").onclick = logout;
+
+  document.getElementById("btnLogin").onclick = ()=>{
+    const pwd = document.getElementById("loginPwd").value.trim();
+    if(pwd==="9426"){
+      closeLogin(); setRole("admin");
+    }else if(pwd==="9426483"){
+      closeLogin(); setRole("limited");
+    }else{
+      document.getElementById("loginErr").style.display = "";
+    }
+  };
+  document.getElementById("loginPwd").addEventListener("keydown",(e)=>{
+    if(e.key==="Enter") document.getElementById("btnLogin").click();
+  });
+
+  document.getElementById("dashScope").onchange = ()=> renderDashboard();
+
+  document.getElementById("btnApplyThreshold").onclick = ()=>{
+    const thr = to_int(document.getElementById("thresholdInput").value);
+    const col = document.getElementById("dangerColorInput").value || "#4d1b1b";
+    state.appearance.debt_highlight_threshold = thr;
+    state.appearance.debt_highlight_color = col;
+    setDirty();
+    applyAppearance();
+    renderDashboard();
+    renderWorkdesk();
+    if(document.getElementById("page-classes").classList.contains("active")) renderClasses();
+  };
+
+  document.getElementById("btnPrintDash").onclick = ()=> window.print();
+
+  document.getElementById("btnRefreshWorkdesk").onclick = renderWorkdesk;
+
+  ["clsGrade","clsGender","clsStream","clsMonth"].forEach(id=>{
+    document.getElementById(id).onchange = ()=> renderClasses();
+  });
+
+  document.getElementById("btnClsAddRow").onclick = ()=>{
+    const subs = clsCurrent.subjects;
+    state.classes[clsCurrent.title][clsCurrent.month].push(createEmptyStudent(subs));
+    setDirty();
+    renderClasses();
+  };
+  document.getElementById("btnClsDelRow").onclick = ()=>{
+    if(clsSelectedRow<0){ alert("یک سطر انتخاب کنید."); return; }
+    state.classes[clsCurrent.title][clsCurrent.month].splice(clsSelectedRow,1);
+    clsSelectedRow = -1;
+    setDirty();
+    renderClasses();
+    updateDashboardIfAdmin();
+  };
+
+  document.getElementById("btnClsExportXlsx").onclick = exportCurrentClassToXlsx;
+  document.getElementById("btnClsImportXlsx").onclick = ()=> document.getElementById("fileClsImportXlsx").click();
+  document.getElementById("fileClsImportXlsx").addEventListener("change", async (e)=>{
+    const f = e.target.files?.[0]; e.target.value="";
+    if(!f) return;
+    await importClassFromXlsx(f);
+  });
+
+  document.getElementById("btnExamAdd").onclick = ()=>{
+    state.exams.push({full_name:"", candidate_no:"", total_debt:0, inst1:0,inst2:0,inst3:0,inst4:0,inst5:0});
+    setDirty(); renderExams(); updateDashboardIfAdmin();
+  };
+  document.getElementById("btnExamDel").onclick = ()=>{
+    if(examSelectedRow<0){ alert("یک سطر انتخاب کنید."); return; }
+    state.exams.splice(examSelectedRow,1);
+    examSelectedRow=-1;
+    setDirty(); renderExams(); updateDashboardIfAdmin();
+  };
+
+  document.getElementById("btnExamExportXlsx").onclick = exportExamsToXlsx;
+  document.getElementById("btnExamImportXlsx").onclick = ()=> document.getElementById("fileExamImportXlsx").click();
+  document.getElementById("fileExamImportXlsx").addEventListener("change", async (e)=>{
+    const f = e.target.files?.[0]; e.target.value="";
+    if(!f) return;
+    await importExamsFromXlsx(f);
+  });
+
+  document.getElementById("btnTariffExportXlsx").onclick = exportTariffsXlsx;
+
+  document.getElementById("tchMonth").onchange = ()=> renderTeachers();
+  document.getElementById("btnTchAdd").onclick = ()=>{
+    const m = document.getElementById("tchMonth").value;
+    state.teachers[m] = Array.isArray(state.teachers[m]) ? state.teachers[m] : [];
+    state.teachers[m].push(tchEmpty());
+    setDirty(); renderTeachers();
+  };
+  document.getElementById("btnTchDel").onclick = ()=>{
+    const m = document.getElementById("tchMonth").value;
+    if(teacherSelectedRow<0){ alert("یک سطر انتخاب کنید."); return; }
+    state.teachers[m].splice(teacherSelectedRow,1);
+    teacherSelectedRow=-1;
+    setDirty(); renderTeachers();
+  };
+  document.getElementById("btnTchExportXlsx").onclick = exportTeachersMonthXlsx;
+
+  document.getElementById("btnSearch").onclick = runSearch;
+  document.getElementById("searchQuery").addEventListener("keydown",(e)=>{
+    if(e.key==="Enter") runSearch();
+  });
+
+  document.getElementById("btnAddNote").onclick = addFinancialNote;
+
+  document.getElementById("btnQuickExportAll").onclick = exportAllSummaryXlsx;
+
+  window.addEventListener("resize", ()=>{
+    Object.values(charts).forEach(ch=>{ try{ch.resize();}catch{} });
+  });
+}
+
+function openAppearanceModal(){
+  const ap = state.appearance || {...APPEARANCE_DEFAULTS};
+  document.getElementById("appTheme").value = ap.theme || "dark_blue";
+  document.getElementById("appFont").value = ap.font_family || "Vazirmatn";
+  document.getElementById("appFontSize").value = String(to_int(ap.font_size||10));
+  document.getElementById("appBold").value = ap.font_bold ? "1" : "0";
+  document.getElementById("appDebtHighlight").value = ap.debt_highlight_enable ? "1" : "0";
+  document.getElementById("appDebtThreshold").value = String(to_int(ap.debt_highlight_threshold||0));
+  document.getElementById("appearanceBack").classList.add("show");
+}
+function closeAppearanceModal(){
+  document.getElementById("appearanceBack").classList.remove("show");
+}
+function saveAppearanceFromModal(){
+  const ap = state.appearance || {...APPEARANCE_DEFAULTS};
+  ap.theme = document.getElementById("appTheme").value;
+  ap.font_family = document.getElementById("appFont").value;
+  ap.font_size = to_int(document.getElementById("appFontSize").value || 10);
+  ap.font_bold = document.getElementById("appBold").value === "1";
+  ap.debt_highlight_enable = document.getElementById("appDebtHighlight").value === "1";
+  ap.debt_highlight_threshold = to_int(document.getElementById("appDebtThreshold").value || 0);
+
+  state.appearance = ap;
+  setDirty();
+  applyAppearance();
+  closeAppearanceModal();
+
+  const active = document.querySelector(".navbtn.active")?.dataset.page;
+  if(active) showPage(active);
+}
+
+function ensureTariffsDefaults(){
+  for(const g of GRADES){
+    for(const sex of GENDERS){
+      for(const stream of Object.keys(STREAMS_SUBJECTS)){
+        for(const subj of [...STREAMS_SUBJECTS[stream], EXTRA_SUBJECT]){
+          const k = keyTariff(g,sex,stream,subj);
+          if(state.tariffs[k]===undefined) state.tariffs[k]=0;
+        }
+      }
+    }
+  }
+}
+
+/* =========================
+   Boot
+========================= */
+(async function boot(){
+  loadData();
+  // اجبار تم روشن
+  if(!state.appearance) state.appearance = {...APPEARANCE_DEFAULTS};
+  state.appearance.theme = "light";
+  ensureTariffsDefaults();
+  applyAppearance();
+  initSelects();
+  initEvents();
+
+  openLogin();
+
+  session.dirty = false;
+  updateDirtyChip();
+})();
+</script>
+</body>
+</html>
